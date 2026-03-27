@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "openclaw": {
+      "command": "node",
+      "args": ["/path/to/Open-Claw/mcp-server/src/index.js"],
+      "env": {
+        "PAPERCLIP_DIR": "/path/to/your/paperclip-project",
+        "PAPERCLIP_URL": "http://localhost:3000"
+      }
+    }
+  }
+}

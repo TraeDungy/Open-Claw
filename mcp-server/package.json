@@ -1,0 +1,17 @@
+{
+  "name": "@openclaw/mcp-server",
+  "version": "0.1.0",
+  "description": "OpenClaw MCP server — manage local services like Paper Clip dashboard",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "openclaw-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
