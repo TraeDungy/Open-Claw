@@ -1,0 +1,226 @@
+{
+  "premiumConfigs": {
+    "32e6e16b-6a20-403f-a150-68030365ec86": {
+      "name": "Polymarket Risk Guard",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 40,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "505ac295-5be4-44d6-b0f1-c751c8980251": {
+      "name": "Revenue Ops",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "adbe4d36-daee-4cff-b188-7d325cc0ca7c": {
+      "name": "VPS Ops",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude"
+      }
+    },
+    "9884f71b-0985-4b6e-8cdf-de78a2c08ba2": {
+      "name": "Polymarket Execution Monitor",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 50,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "5938656f-445f-4f41-8351-b745d72cbc04": {
+      "name": "Founding Engineer",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 80,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "8108e142-42a3-4ae0-9fe0-8e081955d4ff": {
+      "name": "Polymarket Strategy Researcher",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 80,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "010acbc6-304f-4e92-a308-e005d5ea892e": {
+      "name": "BIG BOSS CEO",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "mode": "",
+        "model": "claude-sonnet-4-6",
+        "chrome": true,
+        "variant": "",
+        "modelReasoningEffort": ""
+      }
+    },
+    "f5014598-2378-4e27-a897-14c38c7a99e9": {
+      "name": "Games PM",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "08add376-77ed-49bb-a7c0-852c24e84767": {
+      "name": "ARC Health Auditor",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "64d994b2-8276-4cd7-89bf-c53f06305715": {
+      "name": "ARC Research Runner",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 80,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "b6391e8c-9ca9-4510-a1a1-de83bafcc05e": {
+      "name": "Hook Intel",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "maxTurnsPerRun": 20,
+        "dangerouslySkipPermissions": false
+      }
+    },
+    "b2a39cff-567d-48c8-a799-983930a28591": {
+      "name": "Empire PM",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "6a8d022f-c66b-45f8-979a-db5657d098af": {
+      "name": "ARC Deploy Guard",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "4e54548f-2ee2-4d0c-8b34-991d059d30bf": {
+      "name": "SaaS PM",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "0aa84859-2cad-45c7-99fa-d4aa4bdbdcbc": {
+      "name": "Media PM",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "env": {
+          "PATH": {
+            "type": "plain",
+            "value": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
+        },
+        "command": "/Users/trialxfire/.nvm/versions/node/v22.16.0/bin/claude",
+        "maxTurnsPerRun": 60,
+        "dangerouslySkipPermissions": true
+      }
+    },
+    "a189cef5-74cf-46eb-931f-d4986eb2692e": {
+      "name": "Morrow",
+      "adapterType": "claude_local",
+      "adapterConfig": {
+        "maxTurnsPerRun": 40,
+        "dangerouslySkipPermissions": false
+      }
+    }
+  },
+  "currentGear": "premium",
+  "switchedAt": "2026-03-31T20:55:42.394Z"
+}
