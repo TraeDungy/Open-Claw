@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEMMA BOY v2 — iMac Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --glass-bg: rgba(10, 10, 10, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.04);
+    --screen-bg: rgba(15, 56, 15, 0.85);
+    --screen-light: #306230;
+    --screen-lighter: #8bac0f;
+    --screen-lightest: #9bbc0f;
+    --accent: #ff004d;
+    --accent-glow: rgba(255, 0, 77, 0.3);
+    --neon-green: #39ff14;
+    --neon-glow: rgba(57, 255, 20, 0.15);
+    --sidebar-width: 260px;
+    --text-dim: rgba(255, 255, 255, 0.4);
+    --text-med: rgba(255, 255, 255, 0.65);
+    --text-bright: rgba(255, 255, 255, 0.9);
+  }
+
+  body {
+    background: #0a0a0a;
+    min-height: 100vh;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-med);
+    overflow: hidden;
+  }
+
+  /* === ANIMATED BACKGROUND === */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(57,255,20,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(57,255,20,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: grid-drift 20s linear infinite;
+  }
+  @keyframes grid-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 40px); }
+  }
+
+  /* Floating orbs */
+  .bg-orbs {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.12;
+    animation: orb-float 25s ease-in-out infinite;
+  }
+  .orb-1 { width: 400px; height: 400px; background: #39ff14; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb-2 { width: 300px; height: 300px; background: #ff004d; bottom: -50px; right: -50px; animation-delay: -8s; }
+  .orb-3 { width: 250px; height: 250px; background: #4a1c6b; top: 50%; left: 50%; animation-delay: -15s; }
+  @keyframes orb-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(60px, -40px) scale(1.1); }
+    50% { transform: translate(-30px, 60px) scale(0.9); }
+    75% { transform: translate(40px, 30px) scale(1.05); }
+  }
+
+  /* Scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* === LAYOUT === */
+  .app {
+    display: flex;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === LEFT SIDEBAR === */
+  .sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 16px 14px 12px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .sidebar-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--neon-green);
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px var(--neon-glow);
+    margin-bottom: 4px;
+  }
+  .sidebar-subtitle {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .sidebar-sections {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    scrollbar-width: none;
+  }
+  .sidebar-sections::-webkit-scrollbar { display: none; }
+
+  .section-label {
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 14px 6px;
+  }
+
+  .tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 14px;
+    background: transparent;
+    border: none;
+    color: var(--text-med);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .tool-btn:hover {
+    background: var(--glass-highlight);
+    color: var(--text-bright);
+  }
+  .tool-btn:active {
+    background: rgba(57, 255, 20, 0.08);
+  }
+  .tool-btn.running {
+    color: var(--neon-green);
+  }
+  .tool-btn.running::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    width: 6px;
+    height: 6px;
+    background: var(--neon-green);
+    border-radius: 50%;
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .tool-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .tool-label { flex: 1; }
+  .tool-key {
+    font-size: 8px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .status-dot.live { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+  .status-dot.off { background: #555; }
+
+  /* === MAIN AREA === */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* Top bar */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+  }
+  .machine-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .top-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .top-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .top-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-bright);
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  /* === CHAT SCREEN (floating glass) === */
+  .chat-container {
+    flex: 1;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 1px rgba(255,255,255,0.05);
+  }
+
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--glass-border);
+    background: var(--glass-highlight);
+  }
+  .chat-header-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  .chat-header-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--screen-lightest);
+    letter-spacing: 1px;
+  }
+  .chat-header-model {
+    margin-left: auto;
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .screen {
+    flex: 1;
+    background: var(--screen-bg);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 14px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--screen-light) transparent;
+    position: relative;
+  }
+  .screen::-webkit-scrollbar { width: 4px; }
+  .screen::-webkit-scrollbar-track { background: transparent; }
+  .screen::-webkit-scrollbar-thumb { background: var(--screen-light); border-radius: 2px; }
+
+  /* Screen glow overlay */
+  .screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.25) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* === MESSAGES === */
+  .msg {
+    margin-bottom: 8px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    position: relative;
+    z-index: 2;
+    word-break: break-word;
+  }
+  .msg.user {
+    color: var(--screen-lightest);
+  }
+  .msg.user::before {
+    content: '> ';
+    color: var(--screen-lighter);
+  }
+  .msg.assistant {
+    color: var(--screen-lighter);
+    padding-left: 8px;
+    border-left: 2px solid var(--screen-light);
+  }
+  .msg.system {
+    color: var(--screen-light);
+    font-size: 13px;
+    text-align: center;
+    padding: 4px 0;
+  }
+  .msg.tool-result {
+    color: var(--neon-green);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(57, 255, 20, 0.05);
+    border: 1px solid rgba(57, 255, 20, 0.1);
+    border-radius: 4px;
+    padding: 8px;
+    margin: 4px 0 8px;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .thinking-dots span {
+    animation: dot-bounce 1.2s steps(2) infinite;
+    display: inline-block;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot-bounce {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* === INPUT === */
+  .input-area {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--glass-border);
+    background: var(--glass-highlight);
+  }
+  .input-area input {
+    flex: 1;
+    background: rgba(15, 56, 15, 0.6);
+    border: 1px solid var(--screen-light);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: var(--screen-lightest);
+    outline: none;
+    caret-color: var(--screen-lighter);
+    transition: all 0.2s;
+  }
+  .input-area input::placeholder {
+    color: var(--screen-light);
+    opacity: 0.5;
+  }
+  .input-area input:focus {
+    border-color: var(--screen-lighter);
+    box-shadow: 0 0 12px rgba(139,172,15,0.2);
+  }
+  .send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+  .send-btn:hover {
+    box-shadow: 0 0 25px var(--accent-glow);
+    transform: translateY(-1px);
+  }
+  .send-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  .send-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* === OUTPUT LOG (bottom panel) === */
+  .output-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 8px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .output-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--neon-green);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(57,255,20,0.2) transparent;
+  }
+  .output-log::-webkit-scrollbar { width: 3px; }
+  .output-log::-webkit-scrollbar-thumb { background: rgba(57,255,20,0.2); }
+  .log-entry {
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .log-entry.error { color: var(--accent); }
+  .log-entry .log-time {
+    color: var(--text-dim);
+    margin-right: 8px;
+    font-size: 9px;
+  }
+
+  /* === BOOT OVERLAY === */
+  .boot-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0a0a0a;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: boot-out 3.5s ease-out forwards;
+  }
+  @keyframes boot-out {
+    0%, 75% { opacity: 1; }
+    100% { opacity: 0; pointer-events: none; }
+  }
+  .boot-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: var(--neon-green);
+    text-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-glow);
+    animation: boot-flicker 0.15s ease-in-out 3;
+    margin-bottom: 8px;
+  }
+  .boot-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+  }
+  @keyframes boot-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .boot-bar {
+    width: 200px;
+    height: 4px;
+    background: rgba(57,255,20,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .boot-bar-fill {
+    height: 100%;
+    background: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+    animation: boot-load 2.5s ease-out forwards;
+  }
+  @keyframes boot-load {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-grid"></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Boot -->
+<div class="boot-overlay" id="bootOverlay">
+  <div class="boot-title">GEMMA BOY</div>
+  <div class="boot-sub">iMAC CONTROL SYSTEM</div>
+  <div class="boot-bar"><div class="boot-bar-fill"></div></div>
+</div>
+
+<!-- App -->
+<div class="app">
+
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">GEMMA BOY</div>
+      <div class="sidebar-subtitle">iMac Control v2</div>
+    </div>
+
+    <div class="sidebar-sections">
+
+      <div class="section-label">QUICK ACTIONS</div>
+      <button class="tool-btn" onclick="runTool('desktop_organize')" id="btn-desktop_organize">
+        <span class="tool-icon">&#9776;</span>
+        <span class="tool-label">Organize Desktop</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('downloads_cleanup')" id="btn-downloads_cleanup">
+        <span class="tool-icon">&#128465;</span>
+        <span class="tool-label">Clean Downloads</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('empty_trash')" id="btn-empty_trash">
+        <span class="tool-icon">&#9851;</span>
+        <span class="tool-label">Empty Trash</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('desktop_list')" id="btn-desktop_list">
+        <span class="tool-icon">&#128193;</span>
+        <span class="tool-label">List Desktop</span>
+      </button>
+
+      <div class="section-label">SYSTEM</div>
+      <button class="tool-btn" onclick="runTool('system_info')" id="btn-system_info">
+        <span class="tool-icon">&#9881;</span>
+        <span class="tool-label">System Info</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('disk_usage')" id="btn-disk_usage">
+        <span class="tool-icon">&#128190;</span>
+        <span class="tool-label">Disk Usage</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('running_apps')" id="btn-running_apps">
+        <span class="tool-icon">&#9654;</span>
+        <span class="tool-label">Running Apps</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('screenshot')" id="btn-screenshot">
+        <span class="tool-icon">&#128247;</span>
+        <span class="tool-label">Screenshot</span>
+      </button>
+
+      <div class="section-label">WORKFLOWS</div>
+      <button class="tool-btn" onclick="runWorkflow('morning')" id="btn-wf-morning">
+        <span class="tool-icon">&#9728;</span>
+        <span class="tool-label">Morning Setup</span>
+        <span class="tool-key">WF1</span>
+      </button>
+      <button class="tool-btn" onclick="runWorkflow('focus')" id="btn-wf-focus">
+        <span class="tool-icon">&#128261;</span>
+        <span class="tool-label">Focus Mode</span>
+        <span class="tool-key">WF2</span>
+      </button>
+      <button class="tool-btn" onclick="runWorkflow('cleanup')" id="btn-wf-cleanup">
+        <span class="tool-icon">&#10024;</span>
+        <span class="tool-label">End of Day</span>
+        <span class="tool-key">WF3</span>
+      </button>
+      <button class="tool-btn" onclick="runWorkflow('media')" id="btn-wf-media">
+        <span class="tool-icon">&#127916;</span>
+        <span class="tool-label">Media Pipeline</span>
+        <span class="tool-key">WF4</span>
+      </button>
+
+      <div class="section-label">CONTROL</div>
+      <button class="tool-btn" onclick="promptKillApp()">
+        <span class="tool-icon">&#10060;</span>
+        <span class="tool-label">Kill App...</span>
+      </button>
+      <button class="tool-btn" onclick="promptOpenUrl()">
+        <span class="tool-icon">&#127760;</span>
+        <span class="tool-label">Open URL...</span>
+      </button>
+      <button class="tool-btn" onclick="promptShell()">
+        <span class="tool-icon">&#62;</span>
+        <span class="tool-label">Run Command...</span>
+      </button>
+      <button class="tool-btn" onclick="runTool('clipboard', {action:'read'})">
+        <span class="tool-icon">&#128203;</span>
+        <span class="tool-label">Read Clipboard</span>
+      </button>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="status-row">
+        <span><span class="status-dot live" id="dotGemma"></span>Gemma</span>
+        <span id="modelLabel">---</span>
+      </div>
+      <div class="status-row">
+        <span><span class="status-dot" id="dotRunner"></span>Runner</span>
+        <span id="runnerLabel">---</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="top-bar">
+      <span class="machine-label" id="machineLabel">MACKS-IMAC</span>
+      <div class="top-actions">
+        <button class="top-btn" onclick="toggleTheme()">THEME</button>
+        <button class="top-btn" onclick="clearChat()">CLEAR</button>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="chat-header-dot"></div>
+        <span class="chat-header-title">GEMMA TERMINAL</span>
+        <span class="chat-header-model" id="headerModel">---</span>
+      </div>
+      <div class="screen" id="screen"></div>
+      <div class="input-area">
+        <input type="text" id="chatInput" placeholder="Ask Gemma or describe what to do..." autocomplete="off" />
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND</button>
+      </div>
+    </div>
+
+    <!-- Output log -->
+    <div class="output-panel">
+      <div class="output-header">
+        <span>SYSTEM LOG</span>
+        <button class="top-btn" onclick="clearLog()" style="font-size:7px;padding:2px 6px;">CLEAR</button>
+      </div>
+      <div class="output-log" id="outputLog"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // === STATE ===
+  let MODEL = 'gemma-2-2b-it';
+  let MACHINE = 'MACKS-IMAC';
+  const messages = [];
+  let isGenerating = false;
+  let currentTheme = 0;
+
+  const themes = [
+    { name: 'MATRIX', screenBg: 'rgba(15,56,15,0.85)', light: '#306230', lighter: '#8bac0f', lightest: '#9bbc0f' },
+    { name: 'GHOST', screenBg: 'rgba(26,26,46,0.85)', light: '#2d2d5e', lighter: '#e0e0ff', lightest: '#ffffff' },
+    { name: 'NEON', screenBg: 'rgba(10,10,10,0.9)', light: '#003300', lighter: '#39ff14', lightest: '#00ff41' },
+    { name: 'EMBER', screenBg: 'rgba(30,10,10,0.85)', light: '#4a1c1c', lighter: '#ff6b35', lightest: '#ffd700' },
+  ];
+
+  // === WORKFLOWS ===
+  const workflows = {
+    morning: {
+      name: 'Morning Setup',
+      steps: [
+        { tool: 'system_info', label: 'Checking system health...' },
+        { tool: 'disk_usage', label: 'Checking disk space...' },
+        { tool: 'desktop_list', label: 'Scanning desktop...' },
+        { tool: 'running_apps', label: 'Listing running apps...' },
+      ]
+    },
+    focus: {
+      name: 'Focus Mode',
+      steps: [
+        { tool: 'shell', args: { command: 'killall -9 Safari 2>/dev/null; killall -9 Mail 2>/dev/null; killall -9 Messages 2>/dev/null; echo "Distractions closed"' }, label: 'Closing distractions...' },
+        { tool: 'notify', args: { title: 'Focus Mode', message: 'Distractions closed. Time to work.' }, label: 'Sending notification...' },
+      ]
+    },
+    cleanup: {
+      name: 'End of Day Cleanup',
+      steps: [
+        { tool: 'desktop_organize', label: 'Organizing desktop...' },
+        { tool: 'downloads_cleanup', label: 'Scanning old downloads...' },
+        { tool: 'empty_trash', label: 'Emptying trash...' },
+        { tool: 'disk_usage', label: 'Final disk check...' },
+      ]
+    },
+    media: {
+      name: 'Media Pipeline',
+      steps: [
+        { tool: 'shell', args: { command: 'ls -la ~/Documents/Video-Content/ 2>/dev/null || echo "No video content folder"' }, label: 'Checking video content...' },
+        { tool: 'shell', args: { command: 'ls -la ~/Documents/Subtitles/ 2>/dev/null || echo "No subtitles folder"' }, label: 'Checking subtitles...' },
+        { tool: 'shell', args: { command: 'ls -la ~/Documents/Design/Artwork/ 2>/dev/null || echo "No artwork folder"' }, label: 'Checking artwork...' },
+        { tool: 'system_info', label: 'System capacity check...' },
+      ]
+    }
+  };
+
+  // === INIT ===
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const res = await fetch('/config');
+      const cfg = await res.json();
+      MODEL = cfg.model;
+      MACHINE = cfg.machine;
+      document.getElementById('modelLabel').textContent = MODEL;
+      document.getElementById('headerModel').textContent = MODEL;
+      document.getElementById('machineLabel').textContent = MACHINE;
+      document.getElementById('dotGemma').classList.add('live');
+    } catch {
+      document.getElementById('modelLabel').textContent = 'offline';
+    }
+
+    // Check runner
+    checkRunner();
+
+    setTimeout(() => {
+      document.getElementById('bootOverlay').remove();
+      addSystemMsg(`GEMMA BOY v2 -- ${MACHINE}`);
+      addSystemMsg('ASK GEMMA OR USE SIDEBAR TOOLS');
+      log('System initialized');
+      document.getElementById('chatInput').focus();
+    }, 3500);
+  });
+
+  async function checkRunner() {
+    try {
+      const res = await fetch('/tool', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool: 'shell', args: { command: 'echo ok' } }),
+      });
+      if (res.ok) {
+        document.getElementById('dotRunner').classList.add('live');
+        document.getElementById('runnerLabel').textContent = ':7070';
+        log('Runner connected');
+      }
+    } catch {
+      document.getElementById('runnerLabel').textContent = 'offline';
+      log('Runner offline', true);
+    }
+  }
+
+  // === KEYBOARD ===
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // === CHAT ===
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || isGenerating) return;
+
+    isGenerating = true;
+    document.getElementById('sendBtn').disabled = true;
+    input.value = '';
+    addMsg('user', text);
+    messages.push({ role: 'user', content: text });
+
+    const thinkingEl = addMsg('assistant', '');
+    thinkingEl.innerHTML = '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let currentEl = thinkingEl;
+      currentEl.textContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.token) {
+              // Strip <tool>...</tool> tags from display, show clean text
+              const cleaned = data.token.replace(/<tool>.*?<\/tool>/g, '');
+              fullResponse += data.token;
+              currentEl.textContent += cleaned;
+              scrollToBottom();
+            }
+            if (data.toolCall) {
+              // Show tool execution in chat
+              addSystemMsg(`EXECUTING: ${data.toolCall.tool}`);
+              log(`Agent calling: ${data.toolCall.tool}: ${data.toolCall.arg.substring(0, 80)}...`);
+              scrollToBottom();
+            }
+            if (data.toolResult) {
+              // Show tool result
+              addToolResult(data.toolResult.output);
+              log(`Result: ${data.toolResult.tool} done`);
+              // Start new assistant message for Gemma's next response
+              currentEl = addMsg('assistant', '');
+              scrollToBottom();
+            }
+            if (data.error) currentEl.textContent = `ERR: ${data.error}`;
+          } catch {}
+        }
+      }
+      if (fullResponse) messages.push({ role: 'assistant', content: fullResponse });
+    } catch (e) {
+      thinkingEl.textContent = `CONNECTION ERROR: ${e.message}`;
+      log(`Chat error: ${e.message}`, true);
+    }
+
+    isGenerating = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('chatInput').focus();
+  }
+
+  // === TOOL EXECUTION ===
+  async function runTool(tool, args = {}) {
+    const btn = document.getElementById(`btn-${tool}`);
+    if (btn) btn.classList.add('running');
+    log(`Running: ${tool}`);
+
+    try {
+      const res = await fetch('/tool', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tool, args }),
+      });
+      const result = await res.json();
+      const output = result.output || result.stdout || result.error || JSON.stringify(result, null, 2);
+
+      addSystemMsg(`[${tool.toUpperCase()}]`);
+      addToolResult(output);
+      log(`Done: ${tool}`);
+    } catch (e) {
+      addSystemMsg(`[${tool}] ERROR: ${e.message}`);
+      log(`Error: ${tool} - ${e.message}`, true);
+    }
+
+    if (btn) btn.classList.remove('running');
+  }
+
+  // === WORKFLOWS ===
+  async function runWorkflow(id) {
+    const wf = workflows[id];
+    if (!wf) return;
+
+    const btn = document.getElementById(`btn-wf-${id}`);
+    if (btn) btn.classList.add('running');
+    addSystemMsg(`--- WORKFLOW: ${wf.name} ---`);
+    log(`Workflow started: ${wf.name}`);
+
+    for (const step of wf.steps) {
+      addSystemMsg(step.label);
+      try {
+        const res = await fetch('/tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: step.tool, args: step.args || {} }),
+        });
+        const result = await res.json();
+        const output = result.output || result.stdout || result.error || JSON.stringify(result, null, 2);
+        addToolResult(output);
+        log(`  Step done: ${step.tool}`);
+      } catch (e) {
+        addToolResult(`ERROR: ${e.message}`);
+        log(`  Step failed: ${step.tool}`, true);
+      }
+    }
+
+    addSystemMsg(`--- WORKFLOW COMPLETE ---`);
+    log(`Workflow done: ${wf.name}`);
+    if (btn) btn.classList.remove('running');
+  }
+
+  // === PROMPTS ===
+  function promptKillApp() {
+    const name = prompt('App name to kill:');
+    if (name) runTool('kill_app', { name });
+  }
+  function promptOpenUrl() {
+    const url = prompt('URL or app to open:');
+    if (url) runTool('open_url', { url });
+  }
+  function promptShell() {
+    const cmd = prompt('Shell command:');
+    if (cmd) runTool('shell', { command: cmd });
+  }
+
+  // === UI HELPERS ===
+  function addMsg(role, text) {
+    const screen = document.getElementById('screen');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.textContent = text;
+    screen.appendChild(div);
+    scrollToBottom();
+    return div;
+  }
+
+  function addSystemMsg(text) { addMsg('system', text); }
+
+  function addToolResult(text) {
+    const screen = document.getElementById('screen');
+    const div = document.createElement('div');
+    div.className = 'msg tool-result';
+    div.textContent = typeof text === 'string' ? text.trim() : JSON.stringify(text, null, 2);
+    screen.appendChild(div);
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    const screen = document.getElementById('screen');
+    screen.scrollTop = screen.scrollHeight;
+  }
+
+  function clearChat() {
+    document.getElementById('screen').innerHTML = '';
+    messages.length = 0;
+    addSystemMsg('MEMORY CLEARED');
+  }
+
+  function toggleTheme() {
+    currentTheme = (currentTheme + 1) % themes.length;
+    const t = themes[currentTheme];
+    const r = document.documentElement.style;
+    r.setProperty('--screen-bg', t.screenBg);
+    r.setProperty('--screen-light', t.light);
+    r.setProperty('--screen-lighter', t.lighter);
+    r.setProperty('--screen-lightest', t.lightest);
+    addSystemMsg(`THEME: ${t.name}`);
+    log(`Theme: ${t.name}`);
+  }
+
+  // === LOG ===
+  function log(msg, isError = false) {
+    const logEl = document.getElementById('outputLog');
+    const entry = document.createElement('div');
+    entry.className = `log-entry${isError ? ' error' : ''}`;
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    entry.innerHTML = `<span class="log-time">${time}</span>${msg}`;
+    logEl.appendChild(entry);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById('outputLog').innerHTML = '';
+  }
+</script>
+</body>
+</html>
