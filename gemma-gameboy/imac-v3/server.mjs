@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.GEMMA_PORT || 7777;
 const LLAMA_URL = process.env.LLAMA_URL || 'http://localhost:8080';
 const RUNNER_URL = process.env.RUNNER_URL || 'http://localhost:7070';
-const MODEL_NAME = process.env.MODEL_NAME || 'hermes-3-llama-3.2-3b';
+const MODEL_NAME = process.env.MODEL_NAME || 'qwen2.5-1.5b';
 const MACHINE_NAME = process.env.MACHINE_NAME || 'MACKS-IMAC';
 
 // === Tools definition (Hermes-3 ChatML native format) ===
@@ -85,25 +85,20 @@ const TOOLS = [
   }
 ];
 
-const SYSTEM_PROMPT = `You are Hermes, a computer agent. You control this Mac by running commands.
+const SYSTEM_PROMPT = `You are a computer agent. You act by running shell commands in code blocks.
 
-To run a command, use this format exactly:
-<tool_call>
-{"name": "shell", "arguments": {"command": "YOUR_COMMAND_HERE"}}
-</tool_call>
+RULES:
+1. ALWAYS run commands — never just describe what to do.
+2. First, list files to see what exists. Then act on what you see.
+3. Use find for files with spaces: find ~/Desktop -maxdepth 1 -name "*.jpg" | while IFS= read -r f; do mv "$f" ~/Desktop/Images/; done
+4. After moving files, run ls to verify.
 
-Example - listing files:
-<tool_call>
-{"name": "shell", "arguments": {"command": "ls -la ~/Desktop/"}}
-</tool_call>
+Desktop sort rules: .jpg/.png/.gif → Images, .pdf/.doc/.docx → Documents, .py/.js/.sh → Code, .mp4/.mov → Videos, .mp3/.wav → Music, .zip/.dmg → Archives
 
-Example - opening a URL:
-<tool_call>
-{"name": "open_app", "arguments": {"target": "https://google.com"}}
-</tool_call>
-
-Available tools: shell, applescript, open_app, notify, kill_app.
-Home: /Users/newowner. Always use <tool_call> format. Never use backticks.`;
+Home: /Users/newowner. Run commands like this:
+\`\`\`shell
+ls ~/Desktop/
+\`\`\``;
 
 // === Nano Claw Runner proxy ===
 async function runTask(type, payload = {}) {
@@ -385,11 +380,6 @@ const server = http.createServer(async (req, res) => {
 
     const agentMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      // Few-shot: show the model the expected behavior
-      { role: 'user', content: 'what time is it' },
-      { role: 'assistant', content: '<tool_call>\n{"name": "shell", "arguments": {"command": "date"}}\n</tool_call>' },
-      { role: 'user', content: '<tool_response>\nWed Apr  9 12:30:00 EDT 2026\n</tool_response>' },
-      { role: 'assistant', content: 'It\'s 12:30 PM on April 9, 2026.' },
       ...messages,
     ];
 
