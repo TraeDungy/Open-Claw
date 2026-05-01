@@ -232,6 +232,8 @@ If no action is needed, output exactly: NO_ACTION_NEEDED`;
   return { analysis, results };
 }
 
+export { parseActions as _parseActions };
+
 export function startCEOLoop(sendFn) {
   _sendFn = sendFn;
   const interval = parseInt(process.env.CEO_LOOP_INTERVAL_MS || '900000');

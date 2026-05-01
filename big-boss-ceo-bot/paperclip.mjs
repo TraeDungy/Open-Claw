@@ -158,3 +158,5 @@ export async function wakeupAgent(agentId, reason) {
   const resolvedId = resolveAgentId(agentId);
   return paperclipPost(`/api/agents/${resolvedId}/wakeup`, { reason });
 }
+
+export { resolveAgentId as _resolveAgentId, parseLines as _parseLines, COMMANDS_WITH_COMPANY_ID as _COMMANDS_WITH_COMPANY_ID };

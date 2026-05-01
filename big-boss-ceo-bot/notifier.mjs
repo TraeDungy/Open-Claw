@@ -40,6 +40,8 @@ function escapeMarkdown(text) {
   return (text || '').replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
 }
 
+export { isAgentProposal as _isAgentProposal, escapeMarkdown as _escapeMarkdown };
+
 // Push the top 3 priorities on startup so owner knows what's hot immediately
 async function pushStartupPriorities(sendFn) {
   try {

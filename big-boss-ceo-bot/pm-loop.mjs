@@ -124,6 +124,8 @@ function parsePMActions(text) {
   return actions;
 }
 
+export { parsePMActions as _parsePMActions, PM_CONFIGS as _PM_CONFIGS };
+
 async function runPMCycle(config, sendFn) {
   console.log(`[pm-loop:${config.name}] running cycle...`);
 

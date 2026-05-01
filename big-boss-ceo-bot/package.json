@@ -4,7 +4,8 @@
   "type": "module",
   "main": "bot.mjs",
   "scripts": {
-    "start": "node bot.mjs"
+    "start": "node bot.mjs",
+    "test": "node --experimental-test-module-mocks --test test/*.test.mjs"
   },
   "dependencies": {
     "node-telegram-bot-api": "^0.64.0",
