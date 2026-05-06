@@ -1,0 +1,11 @@
+# Rendered video output — large files, exclude from git
+output/
+
+# Generated audio (large WAV files)
+audio/binaural/*.wav
+audio/tones/*.wav
+audio/ambient/*.wav
+audio/narration/*.wav
+
+# Node modules
+node_modules/

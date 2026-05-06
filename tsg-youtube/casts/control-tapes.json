@@ -1,0 +1,39 @@
+{
+  "series": "THE CONTROL TAPES",
+  "description": "Found-footage research recordings from a fictional PK research program",
+  "characters": {
+    "tape_label": {
+      "engine": "kokoro",
+      "voice": "am_adam",
+      "speed": 0.85,
+      "description": "Official tape label narrator — slow, bureaucratic, emotionless"
+    },
+    "voss": {
+      "engine": "chatterbox",
+      "ref_audio": "voice-references/voss-reference.wav",
+      "exaggeration": 0.25,
+      "cfg_weight": 0.55,
+      "description": "Dr. Elara Voss — female, clinical, measured, increasingly uneasy across the season"
+    },
+    "okafor": {
+      "engine": "chatterbox",
+      "ref_audio": "voice-references/okafor-reference.wav",
+      "exaggeration": 0.30,
+      "cfg_weight": 0.50,
+      "description": "Dr. Okafor — male, skeptical, warm, introduced in Episode 4"
+    },
+    "subject14": {
+      "engine": "chatterbox",
+      "ref_audio": "voice-references/subject14-reference.wav",
+      "exaggeration": 0.15,
+      "cfg_weight": 0.60,
+      "description": "Subject 14 — neutral, flat affect initially, voice evolves across the season"
+    }
+  },
+  "tape_degradation": {
+    "ep01-03": "highpass=f=80,lowpass=f=8000",
+    "ep04-06": "highpass=f=120,lowpass=f=6000,aecho=0.6:0.3:10:0.1",
+    "ep07-09": "highpass=f=200,lowpass=f=4500,aecho=0.6:0.3:10:0.15",
+    "ep10": "highpass=f=80,lowpass=f=8000"
+  }
+}

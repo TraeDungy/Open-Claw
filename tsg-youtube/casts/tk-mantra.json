@@ -1,0 +1,24 @@
+{
+  "series": "TK MANTRA SESSIONS",
+  "description": "Guided telekinesis meditation with binaural underlayer",
+  "characters": {
+    "guide": {
+      "engine": "kokoro",
+      "voice": "am_adam",
+      "speed": 0.90,
+      "description": "TSG Guide — deep, authoritative, calm, deliberate pacing"
+    }
+  },
+  "binaural_progression": {
+    "ep01": { "beat": 10, "band": "Alpha", "note": "Relaxed awareness, accessible entry" },
+    "ep02": { "beat": 8, "band": "Alpha/Theta", "note": "Deeper stillness" },
+    "ep03": { "beat": 7.83, "band": "Theta (Schumann)", "note": "Perception expansion" },
+    "ep04": { "beat": 6, "band": "Theta", "note": "Breath entrainment" },
+    "ep05": { "beat": 5, "band": "Theta", "note": "Sustained focus" },
+    "ep06": { "beat": 12, "band": "Alpha-Beta", "note": "Active direction" },
+    "ep07": { "beat": 4, "band": "Theta-Delta", "note": "Flow state" },
+    "ep08": { "beat": 7.83, "band": "Theta (Schumann)", "note": "Frequency lock" },
+    "ep09": { "beat": 7.83, "band": "Theta (Schumann)", "note": "Coherence" },
+    "ep10": { "beat": "6>4>2>4>6", "band": "Sweep", "note": "Progressive deepening" }
+  }
+}
