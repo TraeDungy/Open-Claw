@@ -1,4 +1,9 @@
 .env
 node_modules/
 state.json
+orchestrator-state.json
+assignment-state.json
+executor-state.json
+ecosystem.config.cjs
 *.log
+*.tmp

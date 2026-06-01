@@ -1,0 +1,42 @@
+# Secrets
+.env
+*.env
+*-key.txt
+*api-key*
+openai-api-key.txt
+claude-max-token.txt
+vps-config.env
+**/ecosystem.config.cjs
+cdp_api_key.json
+
+# Keys / certs
+*.pem
+*.key
+*.p12
+
+# Runtime / state
+node_modules/
+state.json
+*.log
+*.db
+
+# Archives
+_archive/
+*.tmp
+
+# Large binaries / media
+*.zip
+*.pkg
+*.tar.gz
+graphic-novel-mastery.zip
+trailer-mastery.zip
+vertical-microdrama-engine.zip
+node-installer.pkg
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V7
+.Trashes
+Thumbs.db
