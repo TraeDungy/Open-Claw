@@ -43,8 +43,8 @@ function escapeMarkdown(text) {
 // Push the top 3 priorities on startup so owner knows what's hot immediately
 async function pushStartupPriorities(sendFn) {
   try {
-    const critical = listIssues({ status: 'todo', priority: 'critical', limit: 20 });
-    const blocked = listIssues({ status: 'blocked', limit: 10 });
+    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const blocked = await listIssues({ status: 'blocked', limit: 10 });
     const unassigned = critical.filter(i => !i.assigneeAgentId).slice(0, 5);
 
     if (critical.length === 0 && blocked.length === 0) return;
@@ -91,7 +91,7 @@ export function startNotifier(sendFn) {
       setLastPoll(new Date().toISOString());
 
       // 1. Issues assigned to CEO (new)
-      const ceoIssues = listIssues({ assigneeAgentId: CEO_ID, limit: 30 });
+      const ceoIssues = await listIssues({ assigneeAgentId: CEO_ID, limit: 30 });
       for (const issue of ceoIssues) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'assigned')) {
@@ -108,7 +108,7 @@ export function startNotifier(sendFn) {
       }
 
       // 2. Recently completed issues
-      const doneIssues = listIssues({ status: 'done', limit: 20 });
+      const doneIssues = await listIssues({ status: 'done', limit: 20 });
       for (const issue of doneIssues) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'done')) {
@@ -122,7 +122,7 @@ export function startNotifier(sendFn) {
       }
 
       // 3. Agent proposal issues
-      const allCritical = listIssues({ priority: 'critical', limit: 50 });
+      const allCritical = await listIssues({ priority: 'critical', limit: 50 });
       for (const issue of allCritical) {
         if (!issue.id) continue;
         if (isAgentProposal(issue) && !hasSeen(issue.id, 'proposal')) {
@@ -138,7 +138,7 @@ export function startNotifier(sendFn) {
       }
 
       // 4. Agents in error state
-      const agents = listAgents();
+      const agents = await listAgents();
       for (const agent of agents) {
         if (agent.status === 'error' && !hasSeen(agent.id, 'error')) {
           markSeen(agent.id, 'error');
@@ -147,7 +147,7 @@ export function startNotifier(sendFn) {
       }
 
       // 5. Stale blocked issues — blocked with no assignee (alert once per issue)
-      const blocked = listIssues({ status: 'blocked', limit: 30 });
+      const blocked = await listIssues({ status: 'blocked', limit: 30 });
       const unownedBlocked = blocked.filter(i => !i.assigneeAgentId);
       for (const issue of unownedBlocked) {
         if (!issue.id) continue;

@@ -2,25 +2,7 @@
  * BIG BOSS CEO Telegram Bot
  * Main entry point — initializes bot, notifier, CEO loop, digest cron
  */
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env manually (no dotenv dep needed)
-const __dir = dirname(fileURLToPath(import.meta.url));
-const envPath = join(__dir, '.env');
-try {
-  const lines = readFileSync(envPath, 'utf8').split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const idx = trimmed.indexOf('=');
-    if (idx < 0) continue;
-    const key = trimmed.slice(0, idx).trim();
-    const val = trimmed.slice(idx + 1).trim();
-    if (!process.env[key]) process.env[key] = val;
-  }
-} catch {}
+import './env.mjs';
 
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
@@ -92,8 +74,8 @@ bot.onText(/\/start/, async () => {
 
 bot.onText(/\/status/, async () => {
   try {
-    const dashboard = getDashboard();
-    const agents = listAgents();
+    const dashboard = await getDashboard();
+    const agents = await listAgents();
     const running = agents.filter(a => a.status === 'running').map(a => a.name).join(', ') || 'none';
     const errored = agents.filter(a => a.status === 'error').map(a => a.name).join(', ') || 'none';
 
@@ -122,8 +104,8 @@ bot.onText(/\/status/, async () => {
 
 bot.onText(/\/issues/, async () => {
   try {
-    const inProgress = listIssues({ status: 'in_progress', limit: 10 });
-    const critical = listIssues({ status: 'todo', priority: 'critical', limit: 15 });
+    const inProgress = await listIssues({ status: 'in_progress', limit: 10 });
+    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 15 });
 
     const fmt = (issues) => issues.map(i =>
       `• *${escMd(i.identifier)}* — ${escMd((i.title || '').slice(0, 60))}${i.assigneeAgentId ? '' : ' ⚠️'}`
@@ -145,7 +127,7 @@ bot.onText(/\/issues/, async () => {
 
 bot.onText(/\/blocked/, async () => {
   try {
-    const blocked = listIssues({ status: 'blocked', limit: 20 });
+    const blocked = await listIssues({ status: 'blocked', limit: 20 });
     if (blocked.length === 0) {
       await send(`✅ *No blocked issues right now\\.*`);
       return;
@@ -161,7 +143,7 @@ bot.onText(/\/blocked/, async () => {
 
 bot.onText(/\/agents/, async () => {
   try {
-    const agents = listAgents();
+    const agents = await listAgents();
     const byStatus = {};
     for (const a of agents) {
       const s = a.status || 'unknown';
@@ -219,7 +201,7 @@ bot.onText(/\/push (.+)/, async (msg, match) => {
   await send(`_Processing directive\\.\\.\\._`);
   try {
     // Create a high-priority issue assigned to CEO with the directive
-    const out = createIssue({
+    const out = await createIssue({
       title: `[OWNER DIRECTIVE] ${directive.slice(0, 100)}`,
       body: `Owner directive received via Telegram:\n\n${directive}\n\nCEO: review and delegate immediately.`,
       assigneeAgentId: CEO_ID,
@@ -236,13 +218,13 @@ bot.onText(/\/assign (\S+) (.+)/, async (msg, match) => {
   const agentName = match[2].trim().toLowerCase();
   try {
     // Find agent by name
-    const agents = listAgents();
+    const agents = await listAgents();
     const agent = agents.find(a => a.name.toLowerCase().includes(agentName));
     if (!agent) {
       await send(`❌ No agent found matching "${escMd(agentName)}"`);
       return;
     }
-    updateIssue(issueId, { assigneeAgentId: agent.id });
+    await updateIssue(issueId, { assigneeAgentId: agent.id });
     await send(`✅ Assigned *${escMd(issueId)}* to *${escMd(agent.name)}*`);
   } catch (err) {
     await send(`❌ Error: ${escMd(err.message)}`);
@@ -252,7 +234,7 @@ bot.onText(/\/assign (\S+) (.+)/, async (msg, match) => {
 bot.onText(/\/done (\S+)/, async (msg, match) => {
   const issueId = match[1].trim();
   try {
-    updateIssue(issueId, { status: 'done' });
+    await updateIssue(issueId, { status: 'done' });
     await send(`✅ Marked *${escMd(issueId)}* as done\\.`);
   } catch (err) {
     await send(`❌ Error: ${escMd(err.message)}`);
@@ -261,8 +243,8 @@ bot.onText(/\/done (\S+)/, async (msg, match) => {
 
 bot.onText(/\/priorities/, async () => {
   try {
-    const critical = listIssues({ status: 'todo', priority: 'critical', limit: 20 });
-    const blocked = listIssues({ status: 'blocked', limit: 10 });
+    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const blocked = await listIssues({ status: 'blocked', limit: 10 });
     const unassigned = critical.filter(i => !i.assigneeAgentId);
 
     const fmtIssue = (i) => {
@@ -292,7 +274,7 @@ bot.onText(/\/priorities/, async () => {
 bot.onText(/\/wakeup (.+)/, async (msg, match) => {
   const agentName = match[1].trim().toLowerCase();
   try {
-    const agents = listAgents();
+    const agents = await listAgents();
     const agent = agents.find(a => a.name.toLowerCase().includes(agentName));
     if (!agent) {
       await send(`❌ No agent found matching "${escMd(agentName)}"`);
@@ -315,9 +297,9 @@ bot.on('message', async (msg) => {
   await bot.sendChatAction(CHAT_ID, 'typing');
 
   try {
-    const dashboard = getDashboard();
-    const agents = listAgents();
-    const critical = listIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const dashboard = await getDashboard();
+    const agents = await listAgents();
+    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
 
     const context = `
 Dashboard: ${dashboard?.tasks?.open} open, ${dashboard?.tasks?.inProgress} in progress, ${dashboard?.tasks?.blocked} blocked
@@ -347,6 +329,15 @@ Be the CEO — confident, strategic, no fluff.`;
 });
 
 // ── Startup ──────────────────────────────────────────────────────────────────
+
+// Graceful shutdown
+function shutdown(signal) {
+  console.log(`[big-boss-ceo-bot] ${signal} received, shutting down...`);
+  bot.stopPolling();
+  setTimeout(() => process.exit(0), 2000);
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 console.log('[big-boss-ceo-bot] starting up...');
 

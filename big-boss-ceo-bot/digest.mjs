@@ -14,12 +14,12 @@ const INITIATIVES = [
 ];
 
 export async function generateDigest() {
-  const dashboard = getDashboard();
-  const inProgress = listIssues({ status: 'in_progress', limit: 30 });
-  const blocked = listIssues({ status: 'blocked', limit: 20 });
-  const done = listIssues({ status: 'done', limit: 20 });
-  const critical = listIssues({ priority: 'critical', limit: 40 });
-  const agents = listAgents();
+  const dashboard = await getDashboard();
+  const inProgress = await listIssues({ status: 'in_progress', limit: 30 });
+  const blocked = await listIssues({ status: 'blocked', limit: 20 });
+  const done = await listIssues({ status: 'done', limit: 20 });
+  const critical = await listIssues({ priority: 'critical', limit: 40 });
+  const agents = await listAgents();
 
   const errorAgents = agents.filter(a => a.status === 'error');
   const runningAgents = agents.filter(a => a.status === 'running');
