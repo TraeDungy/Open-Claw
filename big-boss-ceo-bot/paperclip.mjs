@@ -58,7 +58,7 @@ export async function updateIssue(issueId, { status, priority, assigneeAgentId }
   if (priority) payload.priority = priority;
   if (assigneeAgentId) payload.assigneeAgentId = resolveAgentId(assigneeAgentId);
 
-  return paperclipFetch('PUT', `/api/issues/${issueId}`, payload);
+  return paperclipFetch('PATCH', `/api/issues/${issueId}`, payload);
 }
 
 export async function commentIssue(issueId, body) {
@@ -81,6 +81,7 @@ export async function getDashboard() {
 export async function checkoutIssue(issueId, agentId) {
   return paperclipFetch('POST', `/api/issues/${issueId}/checkout`, {
     agentId: resolveAgentId(agentId),
+    expectedStatuses: ['todo', 'backlog', 'in_progress'],
   });
 }
 
