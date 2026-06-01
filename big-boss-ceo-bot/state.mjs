@@ -1,11 +1,15 @@
 /**
  * Persistent dedup state — same pattern as error-triage
+ * Now with atomic writes and TTL-based pruning.
  */
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { atomicWriteJSON } from './atomic-write.mjs';
 
 const STATE_FILE = new URL('./state.json', import.meta.url).pathname;
+const PRUNE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 let _state = null;
+let _saveCount = 0;
 
 function load() {
   if (_state) return _state;
@@ -21,8 +25,19 @@ function load() {
   return _state;
 }
 
+function pruneState() {
+  const s = load();
+  const cutoff = Date.now() - PRUNE_MAX_AGE_MS;
+  for (const [id, events] of Object.entries(s.seenIssues)) {
+    const allOld = Object.values(events).every(ts => ts < cutoff);
+    if (allOld) delete s.seenIssues[id];
+  }
+}
+
 function save() {
-  writeFileSync(STATE_FILE, JSON.stringify(_state, null, 2));
+  _saveCount++;
+  if (_saveCount % 50 === 0) pruneState();
+  atomicWriteJSON(STATE_FILE, _state);
 }
 
 export function hasSeen(issueId, eventType) {
