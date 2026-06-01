@@ -2,7 +2,7 @@
  * Daily digest — sent every morning at 9am
  * Summarizes all 5 initiatives using LiteLLM
  */
-import { listIssues, listAgents, getDashboard } from './paperclip.mjs';
+import { getCachedDashboard, getCachedIssues, getCachedAgents } from './data-cache.mjs';
 import { chat } from './llm.mjs';
 
 const INITIATIVES = [
@@ -14,12 +14,12 @@ const INITIATIVES = [
 ];
 
 export async function generateDigest() {
-  const dashboard = await getDashboard();
-  const inProgress = await listIssues({ status: 'in_progress', limit: 30 });
-  const blocked = await listIssues({ status: 'blocked', limit: 20 });
-  const done = await listIssues({ status: 'done', limit: 20 });
-  const critical = await listIssues({ priority: 'critical', limit: 40 });
-  const agents = await listAgents();
+  const dashboard = getCachedDashboard();
+  const inProgress = getCachedIssues({ status: 'in_progress', limit: 30 });
+  const blocked = getCachedIssues({ status: 'blocked', limit: 20 });
+  const done = getCachedIssues({ status: 'done', limit: 20 });
+  const critical = getCachedIssues({ priority: 'critical', limit: 40 });
+  const agents = getCachedAgents();
 
   const errorAgents = agents.filter(a => a.status === 'error');
   const runningAgents = agents.filter(a => a.status === 'running');

@@ -6,9 +6,9 @@
  * Usage: import { startAllPMLoops } from './pm-loop.mjs'; then call startAllPMLoops(sendFn).
  */
 import {
-  listIssues, listAgents, createIssue, commentIssue,
-  updateIssue, closeIssue, reassignIssue, wakeupAgent,
+  createIssue, closeIssue, reassignIssue, wakeupAgent,
 } from './paperclip.mjs';
+import { getCachedIssues, getCachedAgents, forceRefresh } from './data-cache.mjs';
 import { chat } from './llm.mjs';
 import { AGENTS } from './agents.mjs';
 
@@ -68,11 +68,11 @@ const PM_CONFIGS = [
   },
 ];
 
-async function buildPMContext(config) {
-  // Fetch all open issues — filter to this PM's domain by keyword
-  const allOpen = await listIssues({ status: 'todo', limit: 100 });
-  const allInProgress = await listIssues({ status: 'in_progress', limit: 50 });
-  const allBlocked = await listIssues({ status: 'blocked', limit: 30 });
+function buildPMContext(config) {
+  // Read from shared cache — no direct API calls
+  const allOpen = getCachedIssues({ status: 'todo', limit: 100 });
+  const allInProgress = getCachedIssues({ status: 'in_progress', limit: 50 });
+  const allBlocked = getCachedIssues({ status: 'blocked', limit: 30 });
 
   const matches = (issue) => {
     const text = `${issue.title || ''} ${issue.body || ''}`.toLowerCase();
@@ -128,7 +128,7 @@ function parsePMActions(text) {
 async function runPMCycle(config, sendFn) {
   console.log(`[pm-loop:${config.name}] running cycle...`);
 
-  const context = await buildPMContext(config);
+  const context = buildPMContext(config);
 
   const systemPrompt = `You are ${config.name} — an autonomous project manager at Trial X Fire.
 
@@ -208,6 +208,9 @@ If no action needed: NO_ACTION_NEEDED`;
       console.error(`[pm-loop:${config.name}] action error:`, err.message);
     }
   }
+
+  // Refresh cache after mutations
+  if (results.length > 0) await forceRefresh();
 
   const analysis = response.split('\n')
     .filter(l => !l.trim().startsWith('ACTION:') && !l.startsWith('NO_ACTION'))

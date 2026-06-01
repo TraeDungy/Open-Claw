@@ -1,5 +1,5 @@
 /**
- * Notifier — polls Paperclip every 2 minutes
+ * Notifier — polls cached data every 2 minutes
  * Proactive alerts for:
  *   1. New issues assigned to BIG BOSS CEO
  *   2. Issues completed (done/cancelled)
@@ -8,16 +8,16 @@
  *   5. Blocked issues with no owner (stale blockers)
  *   6. Unassigned critical backlog (> CRITICAL_ALERT_THRESHOLD)
  *   7. Startup priorities push
+ *
+ * Now reads from data-cache.mjs instead of hitting Paperclip directly.
  */
-import { listIssues, listAgents } from './paperclip.mjs';
+import { getCachedIssues, getCachedAgents } from './data-cache.mjs';
 import { hasSeen, markSeen, setLastPoll } from './state.mjs';
 
 const CEO_ID = process.env.CEO_AGENT_ID;
 
 // How many unassigned critical issues trigger a proactive alert
 const CRITICAL_UNASSIGNED_THRESHOLD = 3;
-// Minutes before a blocked issue with no owner is flagged as stale
-const STALE_BLOCKED_MINUTES = 30;
 
 // Seconds since epoch of last "unassigned critical" alert (rate-limit to once/hour)
 let lastUnassignedAlert = 0;
@@ -43,8 +43,8 @@ function escapeMarkdown(text) {
 // Push the top 3 priorities on startup so owner knows what's hot immediately
 async function pushStartupPriorities(sendFn) {
   try {
-    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
-    const blocked = await listIssues({ status: 'blocked', limit: 10 });
+    const critical = getCachedIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const blocked = getCachedIssues({ status: 'blocked', limit: 10 });
     const unassigned = critical.filter(i => !i.assigneeAgentId).slice(0, 5);
 
     if (critical.length === 0 && blocked.length === 0) return;
@@ -83,15 +83,15 @@ async function pushStartupPriorities(sendFn) {
 export function startNotifier(sendFn) {
   const interval = parseInt(process.env.POLL_INTERVAL_MS || '120000');
 
-  // Push priorities immediately on boot
-  setTimeout(() => pushStartupPriorities(sendFn), 5000);
+  // Push priorities after cache has had time to populate (10s)
+  setTimeout(() => pushStartupPriorities(sendFn), 10000);
 
   async function poll() {
     try {
       setLastPoll(new Date().toISOString());
 
       // 1. Issues assigned to CEO (new)
-      const ceoIssues = await listIssues({ assigneeAgentId: CEO_ID, limit: 30 });
+      const ceoIssues = getCachedIssues({ assigneeAgentId: CEO_ID, limit: 30 });
       for (const issue of ceoIssues) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'assigned')) {
@@ -108,7 +108,7 @@ export function startNotifier(sendFn) {
       }
 
       // 2. Recently completed issues
-      const doneIssues = await listIssues({ status: 'done', limit: 20 });
+      const doneIssues = getCachedIssues({ status: 'done', limit: 20 });
       for (const issue of doneIssues) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'done')) {
@@ -122,7 +122,7 @@ export function startNotifier(sendFn) {
       }
 
       // 3. Agent proposal issues
-      const allCritical = await listIssues({ priority: 'critical', limit: 50 });
+      const allCritical = getCachedIssues({ priority: 'critical', limit: 50 });
       for (const issue of allCritical) {
         if (!issue.id) continue;
         if (isAgentProposal(issue) && !hasSeen(issue.id, 'proposal')) {
@@ -138,7 +138,7 @@ export function startNotifier(sendFn) {
       }
 
       // 4. Agents in error state
-      const agents = await listAgents();
+      const agents = getCachedAgents();
       for (const agent of agents) {
         if (agent.status === 'error' && !hasSeen(agent.id, 'error')) {
           markSeen(agent.id, 'error');
@@ -147,7 +147,7 @@ export function startNotifier(sendFn) {
       }
 
       // 5. Stale blocked issues — blocked with no assignee (alert once per issue)
-      const blocked = await listIssues({ status: 'blocked', limit: 30 });
+      const blocked = getCachedIssues({ status: 'blocked', limit: 30 });
       const unownedBlocked = blocked.filter(i => !i.assigneeAgentId);
       for (const issue of unownedBlocked) {
         if (!issue.id) continue;
@@ -187,7 +187,8 @@ export function startNotifier(sendFn) {
     }
   }
 
-  poll();
+  // First poll after 15s (cache needs time to populate)
+  setTimeout(poll, 15000);
   setInterval(poll, interval);
-  console.log(`[notifier] polling every ${interval / 1000}s`);
+  console.log(`[notifier] polling cached data every ${interval / 1000}s`);
 }

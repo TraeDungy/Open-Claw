@@ -4,9 +4,11 @@
  */
 import './env.mjs';
 
+import http from 'http';
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
-import { listIssues, listAgents, getDashboard, createIssue, commentIssue, updateIssue, wakeupAgent } from './paperclip.mjs';
+import { createIssue, updateIssue, wakeupAgent } from './paperclip.mjs';
+import { startDataCache, getCachedDashboard, getCachedIssues, getCachedAgents, forceRefresh, getCacheStats } from './data-cache.mjs';
 import { startNotifier } from './notifier.mjs';
 import { startCEOLoop, runCycle } from './ceo-loop.mjs';
 import { startAllPMLoops } from './pm-loop.mjs';
@@ -74,8 +76,8 @@ bot.onText(/\/start/, async () => {
 
 bot.onText(/\/status/, async () => {
   try {
-    const dashboard = await getDashboard();
-    const agents = await listAgents();
+    const dashboard = getCachedDashboard();
+    const agents = getCachedAgents();
     const running = agents.filter(a => a.status === 'running').map(a => a.name).join(', ') || 'none';
     const errored = agents.filter(a => a.status === 'error').map(a => a.name).join(', ') || 'none';
 
@@ -104,8 +106,8 @@ bot.onText(/\/status/, async () => {
 
 bot.onText(/\/issues/, async () => {
   try {
-    const inProgress = await listIssues({ status: 'in_progress', limit: 10 });
-    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 15 });
+    const inProgress = getCachedIssues({ status: 'in_progress', limit: 10 });
+    const critical = getCachedIssues({ status: 'todo', priority: 'critical', limit: 15 });
 
     const fmt = (issues) => issues.map(i =>
       `• *${escMd(i.identifier)}* — ${escMd((i.title || '').slice(0, 60))}${i.assigneeAgentId ? '' : ' ⚠️'}`
@@ -127,7 +129,7 @@ bot.onText(/\/issues/, async () => {
 
 bot.onText(/\/blocked/, async () => {
   try {
-    const blocked = await listIssues({ status: 'blocked', limit: 20 });
+    const blocked = getCachedIssues({ status: 'blocked', limit: 20 });
     if (blocked.length === 0) {
       await send(`✅ *No blocked issues right now\\.*`);
       return;
@@ -143,7 +145,7 @@ bot.onText(/\/blocked/, async () => {
 
 bot.onText(/\/agents/, async () => {
   try {
-    const agents = await listAgents();
+    const agents = getCachedAgents();
     const byStatus = {};
     for (const a of agents) {
       const s = a.status || 'unknown';
@@ -201,12 +203,13 @@ bot.onText(/\/push (.+)/, async (msg, match) => {
   await send(`_Processing directive\\.\\.\\._`);
   try {
     // Create a high-priority issue assigned to CEO with the directive
-    const out = await createIssue({
+    await createIssue({
       title: `[OWNER DIRECTIVE] ${directive.slice(0, 100)}`,
       body: `Owner directive received via Telegram:\n\n${directive}\n\nCEO: review and delegate immediately.`,
       assigneeAgentId: CEO_ID,
       priority: 'critical',
     });
+    await forceRefresh();
     await send(`✅ *Directive issued to BIG BOSS CEO*\n\n_"${escMd(directive.slice(0, 200))}"_`);
   } catch (err) {
     await send(`❌ Error: ${escMd(err.message)}`);
@@ -218,13 +221,14 @@ bot.onText(/\/assign (\S+) (.+)/, async (msg, match) => {
   const agentName = match[2].trim().toLowerCase();
   try {
     // Find agent by name
-    const agents = await listAgents();
+    const agents = getCachedAgents();
     const agent = agents.find(a => a.name.toLowerCase().includes(agentName));
     if (!agent) {
       await send(`❌ No agent found matching "${escMd(agentName)}"`);
       return;
     }
     await updateIssue(issueId, { assigneeAgentId: agent.id });
+    await forceRefresh();
     await send(`✅ Assigned *${escMd(issueId)}* to *${escMd(agent.name)}*`);
   } catch (err) {
     await send(`❌ Error: ${escMd(err.message)}`);
@@ -235,6 +239,7 @@ bot.onText(/\/done (\S+)/, async (msg, match) => {
   const issueId = match[1].trim();
   try {
     await updateIssue(issueId, { status: 'done' });
+    await forceRefresh();
     await send(`✅ Marked *${escMd(issueId)}* as done\\.`);
   } catch (err) {
     await send(`❌ Error: ${escMd(err.message)}`);
@@ -243,8 +248,8 @@ bot.onText(/\/done (\S+)/, async (msg, match) => {
 
 bot.onText(/\/priorities/, async () => {
   try {
-    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
-    const blocked = await listIssues({ status: 'blocked', limit: 10 });
+    const critical = getCachedIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const blocked = getCachedIssues({ status: 'blocked', limit: 10 });
     const unassigned = critical.filter(i => !i.assigneeAgentId);
 
     const fmtIssue = (i) => {
@@ -274,7 +279,7 @@ bot.onText(/\/priorities/, async () => {
 bot.onText(/\/wakeup (.+)/, async (msg, match) => {
   const agentName = match[1].trim().toLowerCase();
   try {
-    const agents = await listAgents();
+    const agents = getCachedAgents();
     const agent = agents.find(a => a.name.toLowerCase().includes(agentName));
     if (!agent) {
       await send(`❌ No agent found matching "${escMd(agentName)}"`);
@@ -297,9 +302,9 @@ bot.on('message', async (msg) => {
   await bot.sendChatAction(CHAT_ID, 'typing');
 
   try {
-    const dashboard = await getDashboard();
-    const agents = await listAgents();
-    const critical = await listIssues({ status: 'todo', priority: 'critical', limit: 20 });
+    const dashboard = getCachedDashboard();
+    const agents = getCachedAgents();
+    const critical = getCachedIssues({ status: 'todo', priority: 'critical', limit: 20 });
 
     const context = `
 Dashboard: ${dashboard?.tasks?.open} open, ${dashboard?.tasks?.inProgress} in progress, ${dashboard?.tasks?.blocked} blocked
@@ -341,7 +346,10 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 
 console.log('[big-boss-ceo-bot] starting up...');
 
-// Start autonomous notifier (polls every 2min, pushes priorities on boot)
+// Start centralized data cache (polls Paperclip once every 60s)
+startDataCache();
+
+// Start autonomous notifier (reads from cache every 2min, pushes priorities on boot)
 startNotifier(send);
 
 // Start CEO autonomous loop (runs every 15min, 6 actions, full authority)
@@ -379,5 +387,26 @@ send([
   ``,
   `_Sending priorities now\\.\\.\\._`,
 ].join('\n'));
+
+// Health check HTTP endpoint
+const HEALTH_PORT = parseInt(process.env.HEALTH_PORT || '7082', 10);
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/healthz') {
+    const stats = getCacheStats();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      service: 'big-boss-ceo-bot',
+      uptime: process.uptime(),
+      cache: stats,
+    }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+healthServer.listen(HEALTH_PORT, '127.0.0.1', () => {
+  console.log(`[healthz] listening on 127.0.0.1:${HEALTH_PORT}`);
+});
 
 console.log('[big-boss-ceo-bot] online');

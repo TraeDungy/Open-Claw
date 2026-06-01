@@ -4,9 +4,10 @@
  * Actions: CREATE_ISSUE, COMMENT, WAKEUP_AGENT, CLOSE_ISSUE, REASSIGN, ESCALATE
  */
 import {
-  listIssues, listAgents, createIssue, commentIssue,
-  updateIssue, closeIssue, reassignIssue, wakeupAgent, getDashboard,
+  createIssue, commentIssue,
+  closeIssue, reassignIssue, wakeupAgent,
 } from './paperclip.mjs';
+import { getCachedDashboard, getCachedIssues, getCachedAgents, forceRefresh } from './data-cache.mjs';
 import { chat } from './llm.mjs';
 import { AGENTS as AGENT_ROSTER } from './agents.mjs';
 
@@ -19,14 +20,14 @@ const INITIATIVES = [
 
 let _sendFn = null;
 
-async function buildContext() {
-  const dashboard = await getDashboard();
-  const inProgress = await listIssues({ status: 'in_progress', limit: 25 });
-  const blocked = await listIssues({ status: 'blocked', limit: 20 });
-  const criticalTodo = await listIssues({ status: 'todo', priority: 'critical', limit: 30 });
-  const allTodo = await listIssues({ status: 'todo', limit: 50 });
+function buildContext() {
+  const dashboard = getCachedDashboard();
+  const inProgress = getCachedIssues({ status: 'in_progress', limit: 25 });
+  const blocked = getCachedIssues({ status: 'blocked', limit: 20 });
+  const criticalTodo = getCachedIssues({ status: 'todo', priority: 'critical', limit: 30 });
+  const allTodo = getCachedIssues({ status: 'todo', limit: 50 });
   const unassigned = allTodo.filter(i => !i.assigneeAgentId).slice(0, 20);
-  const agents = await listAgents();
+  const agents = getCachedAgents();
 
   const agentSummary = agents.map(a =>
     `${a.name} [${a.id}] (${a.status || 'unknown'})`
@@ -101,7 +102,7 @@ export async function runCycle() {
   const sendFn = _sendFn;
   console.log('[ceo-loop] running decision cycle...');
 
-  const context = await buildContext();
+  const context = buildContext();
 
   const systemPrompt = `You are BIG BOSS CEO — the fully autonomous chief executive of Trial X Fire, a content distribution company operating FAST channels, OTT platforms, and video delivery pipelines.
 
@@ -200,6 +201,9 @@ If no action is needed, output exactly: NO_ACTION_NEEDED`;
       results.push(`⚠️ Action failed: ${err.message.slice(0, 100)}`);
     }
   }
+
+  // Refresh cache after mutations so next consumer sees updated state
+  if (results.length > 0) await forceRefresh();
 
   const analysis = response.split('\n')
     .filter(l => !l.trim().startsWith('ACTION:') && !l.startsWith('NO_ACTION'))
