@@ -10,68 +10,69 @@ import {
   updateIssue, closeIssue, reassignIssue, wakeupAgent,
 } from './paperclip.mjs';
 import { chat } from './llm.mjs';
+import { AGENTS } from './agents.mjs';
 
 // PM configuration — each entry defines one PM's scope, team, and decision authority
 const PM_CONFIGS = [
   {
     name: 'Empire PM',
-    agentId: 'b2a39cff-567d-48c8-a799-983930a28591',
+    agentId: AGENTS['Empire PM'],
     role: 'Content Empire — FAST channels, OTT distribution, Tubi/Pluto/Plex delivery pipelines',
     keywords: ['empire', 'fast', 'channel', 'distribution', 'tubi', 'pluto', 'plex', 'xumo', 'ott', 'roku', 'fire tv'],
     team: {
-      'Film Plug Operator': '5c095393-946a-4a15-8294-3f7de1483a1f',
-      'Nano Claw': '8d0c0062-33e8-4f03-bdcc-d9014f778fdc',
-      'Catalog Intelligence': 'aaccba6c-d649-4d63-bd29-d73a56bcd640',
+      'Film Plug Operator': AGENTS['Film Plug Operator'],
+      'Nano Claw': AGENTS['Nano Claw'],
+      'Catalog Intelligence': AGENTS['Catalog Intelligence'],
     },
     intervalMs: 30 * 60 * 1000, // 30 min
     startDelayMs: 3 * 60 * 1000, // stagger starts
   },
   {
     name: 'Media PM',
-    agentId: '0aa84859-2cad-45c7-99fa-d4aa4bdbdcbc',
+    agentId: AGENTS['Media PM'],
     role: 'Content Pipeline — video encoding, transcoding, R2 uploads, Airtable metadata, Vimeo sync',
     keywords: ['media', 'video', 'encode', 'transcode', 'r2', 'vimeo', 'airtable', 'content', 'pipeline', 'metadata'],
     team: {
-      'Goldie': 'b1719ba8-10e9-4a40-babb-6b956bd74fed',
-      'NVIDIA Worker': '49d5f91f-da34-4014-b824-9521920af7de',
-      'Catalog Intelligence': 'aaccba6c-d649-4d63-bd29-d73a56bcd640',
-      'Nano Claw': '8d0c0062-33e8-4f03-bdcc-d9014f778fdc',
+      'Goldie': AGENTS['Goldie'],
+      'NVIDIA Worker': AGENTS['NVIDIA Worker'],
+      'Catalog Intelligence': AGENTS['Catalog Intelligence'],
+      'Nano Claw': AGENTS['Nano Claw'],
     },
     intervalMs: 30 * 60 * 1000,
     startDelayMs: 7 * 60 * 1000,
   },
   {
     name: 'Revenue Ops',
-    agentId: '505ac295-5be4-44d6-b0f1-c751c8980251',
+    agentId: AGENTS['Revenue Ops'],
     role: 'Revenue Operations — monetization, billing, payments, analytics, x402 services, revenue targets',
     keywords: ['revenue', 'monetize', 'billing', 'payment', 'stripe', 'x402', 'analytics', 'wallet', 'income'],
     team: {
-      'Selene Vale': '8767955d-87f9-4fa6-a7e5-5a3c24cf6b1c',
-      'Integration Specialist': 'f0cc5daf-6d1f-4146-8b10-7be414024cb8',
+      'Selene Vale': AGENTS['Selene Vale'],
+      'Integration Specialist': AGENTS['Integration Specialist'],
     },
     intervalMs: 45 * 60 * 1000,
     startDelayMs: 11 * 60 * 1000,
   },
   {
     name: 'SaaS PM',
-    agentId: '4e54548f-2ee2-4d0c-8b34-991d059d30bf',
+    agentId: AGENTS['SaaS PM'],
     role: 'SaaS Product Development — web apps, dashboards, APIs, user-facing product features',
     keywords: ['saas', 'product', 'dashboard', 'api', 'web app', 'feature', 'launch', 'deploy', 'frontend', 'backend'],
     team: {
-      'Integration Specialist': 'f0cc5daf-6d1f-4146-8b10-7be414024cb8',
-      'Goldie': 'b1719ba8-10e9-4a40-babb-6b956bd74fed',
-      'VPS Ops': 'adbe4d36-daee-4cff-b188-7d325cc0ca7c',
+      'Integration Specialist': AGENTS['Integration Specialist'],
+      'Goldie': AGENTS['Goldie'],
+      'VPS Ops': AGENTS['VPS Ops'],
     },
     intervalMs: 45 * 60 * 1000,
     startDelayMs: 15 * 60 * 1000,
   },
 ];
 
-function buildPMContext(config) {
+async function buildPMContext(config) {
   // Fetch all open issues — filter to this PM's domain by keyword
-  const allOpen = listIssues({ status: 'todo', limit: 100 });
-  const allInProgress = listIssues({ status: 'in_progress', limit: 50 });
-  const allBlocked = listIssues({ status: 'blocked', limit: 30 });
+  const allOpen = await listIssues({ status: 'todo', limit: 100 });
+  const allInProgress = await listIssues({ status: 'in_progress', limit: 50 });
+  const allBlocked = await listIssues({ status: 'blocked', limit: 30 });
 
   const matches = (issue) => {
     const text = `${issue.title || ''} ${issue.body || ''}`.toLowerCase();
@@ -127,7 +128,7 @@ function parsePMActions(text) {
 async function runPMCycle(config, sendFn) {
   console.log(`[pm-loop:${config.name}] running cycle...`);
 
-  const context = buildPMContext(config);
+  const context = await buildPMContext(config);
 
   const systemPrompt = `You are ${config.name} — an autonomous project manager at Trial X Fire.
 
@@ -173,11 +174,11 @@ If no action needed: NO_ACTION_NEEDED`;
   for (const action of actions.slice(0, 4)) {
     try {
       if (action.type === 'assign') {
-        reassignIssue(action.issueId, action.agentId);
+        await reassignIssue(action.issueId, action.agentId);
         results.push(`🎯 Assigned ${action.issueId} — ${action.reason}`);
 
       } else if (action.type === 'create') {
-        createIssue({
+        await createIssue({
           title: action.title,
           body: action.body,
           assigneeAgentId: action.agentId,
@@ -186,7 +187,7 @@ If no action needed: NO_ACTION_NEEDED`;
         results.push(`📝 Created: ${action.title}`);
 
       } else if (action.type === 'close') {
-        closeIssue(action.issueId);
+        await closeIssue(action.issueId);
         results.push(`✅ Closed ${action.issueId}`);
 
       } else if (action.type === 'wakeup') {
@@ -195,10 +196,10 @@ If no action needed: NO_ACTION_NEEDED`;
 
       } else if (action.type === 'escalate_ceo') {
         // Create a CEO-assigned issue to escalate
-        createIssue({
+        await createIssue({
           title: `[${config.name} ESCALATION] ${action.message.slice(0, 80)}`,
           body: `Escalated by ${config.name}:\n\n${action.message}`,
-          assigneeAgentId: '010acbc6-304f-4e92-a308-e005d5ea892e', // BIG BOSS CEO
+          assigneeAgentId: AGENTS['Big Boss CEO'],
           priority: 'high',
         });
         results.push(`🚨 Escalated to CEO`);
