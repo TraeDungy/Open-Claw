@@ -10,7 +10,7 @@ import {
 } from './paperclip.mjs';
 import { getCachedIssues, getCachedAgents, forceRefresh } from './data-cache.mjs';
 import { chat } from './llm.mjs';
-import { AGENTS } from './agents.mjs';
+import { AGENTS, sanitizeId, isValidUUID, resolveAgentId } from './agents.mjs';
 
 // PM configuration — each entry defines one PM's scope, team, and decision authority
 const PM_CONFIGS = [
@@ -173,29 +173,35 @@ If no action needed: NO_ACTION_NEEDED`;
 
   for (const action of actions.slice(0, 4)) {
     try {
+      const issueId = sanitizeId(action.issueId);
+      const agentId = resolveAgentId(action.agentId);
+      const validAgent = isValidUUID(agentId);
+
       if (action.type === 'assign') {
-        await reassignIssue(action.issueId, action.agentId);
-        results.push(`🎯 Assigned ${action.issueId} — ${action.reason}`);
+        if (!issueId || !validAgent) { console.warn(`[pm-loop:${config.name}] skip assign — invalid ids:`, action.issueId, action.agentId); continue; }
+        await reassignIssue(issueId, agentId);
+        results.push(`🎯 Assigned ${issueId} — ${action.reason}`);
 
       } else if (action.type === 'create') {
         await createIssue({
           title: action.title,
           body: action.body,
-          assigneeAgentId: action.agentId,
+          assigneeAgentId: validAgent ? agentId : undefined,
           priority: action.priority || 'high',
         });
         results.push(`📝 Created: ${action.title}`);
 
       } else if (action.type === 'close') {
-        await closeIssue(action.issueId);
-        results.push(`✅ Closed ${action.issueId}`);
+        if (!issueId) { console.warn(`[pm-loop:${config.name}] skip close — invalid issueId:`, action.issueId); continue; }
+        await closeIssue(issueId);
+        results.push(`✅ Closed ${issueId}`);
 
       } else if (action.type === 'wakeup') {
-        await wakeupAgent(action.agentId, action.reason);
+        if (!validAgent) { console.warn(`[pm-loop:${config.name}] skip wakeup — invalid agentId:`, action.agentId); continue; }
+        await wakeupAgent(agentId, action.reason);
         results.push(`⚡ Woke up agent: ${action.reason}`);
 
       } else if (action.type === 'escalate_ceo') {
-        // Create a CEO-assigned issue to escalate
         await createIssue({
           title: `[${config.name} ESCALATION] ${action.message.slice(0, 80)}`,
           body: `Escalated by ${config.name}:\n\n${action.message}`,

@@ -64,3 +64,24 @@ export function resolveAgentId(agentIdOrName) {
   }
   return agentIdOrName; // pass through if no match
 }
+
+/** Check if a string is a valid UUID */
+export function isValidUUID(str) {
+  return !!str && UUID_RE.test(str);
+}
+
+/**
+ * Sanitize an ID field from LLM output.
+ * LLMs often output template placeholders like "UUID-or-identifier".
+ * Returns the ID if valid, or null if garbage.
+ */
+export function sanitizeId(idOrIdentifier) {
+  if (!idOrIdentifier) return null;
+  const s = String(idOrIdentifier).trim();
+  // Valid UUID
+  if (UUID_RE.test(s)) return s;
+  // Valid Paperclip identifier (e.g. TRI-123)
+  if (/^[A-Z]+-\d+$/.test(s)) return s;
+  // Garbage — LLM output a placeholder or description
+  return null;
+}

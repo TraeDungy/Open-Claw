@@ -9,7 +9,7 @@ import {
 } from './paperclip.mjs';
 import { getCachedDashboard, getCachedIssues, getCachedAgents, forceRefresh } from './data-cache.mjs';
 import { chat } from './llm.mjs';
-import { AGENTS as AGENT_ROSTER } from './agents.mjs';
+import { AGENTS as AGENT_ROSTER, sanitizeId, isValidUUID, resolveAgentId } from './agents.mjs';
 
 const INITIATIVES = [
   'revenue targets',
@@ -160,37 +160,46 @@ If no action is needed, output exactly: NO_ACTION_NEEDED`;
 
   for (const action of actions.slice(0, 6)) {
     try {
+      // Sanitize IDs — LLMs often output placeholder text like "UUID-or-identifier"
+      const issueId = sanitizeId(action.issueId);
+      const agentId = resolveAgentId(action.agentId || action.assigneeAgentId);
+      const validAgent = isValidUUID(agentId);
+
       if (action.type === 'create_issue') {
         const out = await createIssue({
           title: action.title,
           body: action.body,
-          assigneeAgentId: action.assigneeAgentId,
+          assigneeAgentId: validAgent ? agentId : undefined,
           priority: action.priority || 'high',
         });
         console.log('[ceo-loop] created issue:', out);
         results.push(`📝 Created: *${action.title}*`);
 
       } else if (action.type === 'comment') {
-        await commentIssue(action.issueId, action.body);
-        console.log('[ceo-loop] commented on:', action.issueId);
-        results.push(`💬 Commented on ${action.issueId}`);
+        if (!issueId) { console.warn('[ceo-loop] skip comment — invalid issueId:', action.issueId); continue; }
+        await commentIssue(issueId, action.body);
+        console.log('[ceo-loop] commented on:', issueId);
+        results.push(`💬 Commented on ${issueId}`);
 
       } else if (action.type === 'wakeup_agent') {
-        await wakeupAgent(action.agentId, action.reason);
-        console.log('[ceo-loop] woke up agent:', action.agentId);
-        const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === action.agentId)?.[0] || action.agentId;
+        if (!validAgent) { console.warn('[ceo-loop] skip wakeup — invalid agentId:', action.agentId); continue; }
+        await wakeupAgent(agentId, action.reason);
+        console.log('[ceo-loop] woke up agent:', agentId);
+        const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === agentId)?.[0] || agentId;
         results.push(`⚡ Woke up *${name}*: ${action.reason}`);
 
       } else if (action.type === 'close_issue') {
-        await closeIssue(action.issueId);
-        console.log('[ceo-loop] closed issue:', action.issueId);
-        results.push(`✅ Closed ${action.issueId}`);
+        if (!issueId) { console.warn('[ceo-loop] skip close — invalid issueId:', action.issueId); continue; }
+        await closeIssue(issueId);
+        console.log('[ceo-loop] closed issue:', issueId);
+        results.push(`✅ Closed ${issueId}`);
 
       } else if (action.type === 'reassign') {
-        await reassignIssue(action.issueId, action.agentId);
-        console.log('[ceo-loop] reassigned:', action.issueId, '→', action.agentId);
-        const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === action.agentId)?.[0] || action.agentId;
-        results.push(`🔄 Reassigned ${action.issueId} → *${name}*`);
+        if (!issueId || !validAgent) { console.warn('[ceo-loop] skip reassign — invalid ids:', action.issueId, action.agentId); continue; }
+        await reassignIssue(issueId, agentId);
+        console.log('[ceo-loop] reassigned:', issueId, '→', agentId);
+        const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === agentId)?.[0] || agentId;
+        results.push(`🔄 Reassigned ${issueId} → *${name}*`);
 
       } else if (action.type === 'escalate') {
         if (sendFn) await sendFn(`🚨 *CEO Escalation*\n\n${action.message}`);

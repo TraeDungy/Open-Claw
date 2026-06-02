@@ -238,8 +238,13 @@ async function executeClaw(issue, agent) {
     throw new Error(`Claw runner error ${r.status}: ${JSON.stringify(r.data)}`);
   }
 
+  const output = r.data?.output || r.data?.result || '';
+  if (!output || (typeof output === 'string' && output.trim().length < 50)) {
+    throw new Error(`Claw returned insufficient output (${(output || '').length} chars)`);
+  }
+
   return {
-    output: r.data?.output || r.data?.result || JSON.stringify(r.data),
+    output,
     model: 'claw/sonnet',
     tokens: 0,
     cost: 0,
