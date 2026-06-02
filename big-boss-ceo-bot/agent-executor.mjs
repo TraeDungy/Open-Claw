@@ -379,6 +379,11 @@ async function executeIssue(issue, agents) {
       result = await executeLLM(issue, agent);
     }
 
+    // Quality gate: reject empty or trivially short outputs
+    if (!result.output || result.output.trim().length < 50) {
+      throw new Error(`Output too short (${(result.output || '').trim().length} chars) — likely empty LLM response`);
+    }
+
     // Step 3: Post results as comment
     const comment = `## Agent Execution: ${agent.name}\n**Engine:** ${result.model}\n**Tokens:** ${result.tokens}\n\n---\n\n${result.output.substring(0, 10000)}`;
     await commentIssue(issue.id, comment);
