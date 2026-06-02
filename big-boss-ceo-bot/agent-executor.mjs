@@ -48,10 +48,12 @@ const FORCE_ID  = process.argv.find((a, i) => process.argv[i - 1] === '--issue')
 
 // Adapters that can actually execute on VPS
 const EXECUTABLE_ADAPTERS = new Set([
-  'opencode_local',  // 29 agents — uses LiteLLM
-  'claude_local',    // 83 agents — use claw binary or LiteLLM
-  'codex_local',     // 2 agents
-  'process',         // 5 agents
+  'opencode_local',    // 29 agents — uses LiteLLM
+  'claude_local',      // 83 agents — use claw binary or LiteLLM
+  'codex_local',       // 2 agents
+  'process',           // 5 agents
+  'openclaw_gateway',  // 9 agents (Goldie, Selene, etc.) — idle, execute via LiteLLM
+  'gemini_local',      // 1 agent (Catalog Intelligence) — execute via LiteLLM
 ]);
 
 // Priorities in execution order
