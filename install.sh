@@ -513,18 +513,42 @@ install_gum() {
     return 0
   fi
 
-  local gum_url="https://github.com/charmbracelet/gum/releases/latest/download/gum_$(uname -s)_$(uname -m).tar.gz"
+  # gum release assets embed the version (gum_X.Y.Z_Darwin_arm64.tar.gz), so
+  # resolve the latest tag from the releases/latest redirect first.
+  if [[ -z "$CURL_CMD" ]]; then
+    info "gum skipped (no working curl — non-critical)"
+    return 0
+  fi
+
+  local latest_url version
+  latest_url="$($CURL_CMD -fsSLI -o /dev/null -w '%{url_effective}' \
+    "https://github.com/charmbracelet/gum/releases/latest" 2>/dev/null || true)"
+  version="${latest_url##*/v}"
+  if [[ -z "$version" || "$version" == "$latest_url" ]]; then
+    info "gum skipped (could not resolve latest version — non-critical)"
+    return 0
+  fi
+
+  local asset="gum_${version}_$(uname -s)_$(uname -m)"
+  local gum_url="https://github.com/charmbracelet/gum/releases/download/v${version}/${asset}.tar.gz"
   local tmp_dir
   tmp_dir="$(mktemp -d)"
 
-  if safe_download "$gum_url" "$tmp_dir/gum.tar.gz" 2>/dev/null; then
+  if safe_download "$gum_url" "$tmp_dir/gum.tar.gz"; then
     tar -xzf "$tmp_dir/gum.tar.gz" -C "$tmp_dir" 2>/dev/null
-    if [[ -f "$tmp_dir/gum" ]]; then
-      chmod +x "$tmp_dir/gum"
+    # The tarball extracts into a versioned directory
+    local gum_bin="$tmp_dir/$asset/gum"
+    [[ -f "$gum_bin" ]] || gum_bin="$tmp_dir/gum"
+    if [[ -f "$gum_bin" ]]; then
+      chmod +x "$gum_bin"
       if [[ -w "/usr/local/bin" ]]; then
-        mv "$tmp_dir/gum" /usr/local/bin/gum
+        mv "$gum_bin" /usr/local/bin/gum
+        success "gum installed"
+      else
+        mkdir -p "$HOME/.local/bin"
+        mv "$gum_bin" "$HOME/.local/bin/gum"
+        success "gum installed to ~/.local/bin"
       fi
-      success "gum installed"
     fi
   else
     info "gum skipped (download failed — non-critical)"
@@ -534,18 +558,21 @@ install_gum() {
 }
 
 # ── OpenClaw Installation ───────────────────────────────────────────────────
+NPM_CMD=""
+
 install_openclaw() {
   local npm_cmd=""
 
   # Find npm
   for candidate in npm /usr/local/bin/npm "$HOME/.nvm/versions/node/*/bin/npm" /opt/local/bin/npm; do
     for bin in $candidate; do
-      if [[ -x "$bin" ]] 2>/dev/null && "$bin" --version &>/dev/null; then
+      if [[ -x "$bin" ]] && "$bin" --version &>/dev/null; then
         npm_cmd="$bin"
         break 2
       fi
     done
   done
+  NPM_CMD="$npm_cmd"
 
   if [[ -z "$npm_cmd" ]]; then
     failure "npm not found — cannot install OpenClaw"
@@ -564,11 +591,17 @@ install_openclaw() {
     return 0
   fi
 
-  # Try with sudo
-  info "Retrying with sudo..."
-  if sudo $npm_cmd install -g "$pkg" 2>&1; then
-    success "OpenClaw installed successfully!"
-    return 0
+  # Retry with sudo, but only for a system npm — sudo can't resolve an
+  # nvm-managed node from the user's home directory.
+  if [[ "$npm_cmd" != "$HOME"/* ]]; then
+    info "Retrying with sudo..."
+    if sudo "$npm_cmd" install -g "$pkg" 2>&1; then
+      success "OpenClaw installed successfully!"
+      return 0
+    fi
+  else
+    warn "npm is user-managed (nvm) — skipping sudo retry"
+    warn "Check the npm error above; you may need: npm cache clean --force"
   fi
 
   failure "OpenClaw installation failed"
@@ -664,9 +697,23 @@ main() {
 
   # Step 5: Verify
   printf "\n  ${BOLD}[3/3] Verifying installation${NC}\n"
+  local openclaw_bin=""
   if command -v openclaw &>/dev/null; then
+    openclaw_bin="openclaw"
+  elif [[ -n "$NPM_CMD" ]]; then
+    # PATH in this shell may not include npm's global bin yet
+    local npm_bin_dir
+    npm_bin_dir="$("$NPM_CMD" config get prefix 2>/dev/null)/bin"
+    if [[ -x "$npm_bin_dir/openclaw" ]]; then
+      openclaw_bin="$npm_bin_dir/openclaw"
+      warn "openclaw is installed at $npm_bin_dir but that directory is not in PATH"
+      info "Add it with: export PATH=\"$npm_bin_dir:\$PATH\""
+    fi
+  fi
+
+  if [[ -n "$openclaw_bin" ]]; then
     local installed_ver
-    installed_ver="$(openclaw --version 2>/dev/null || echo "unknown")"
+    installed_ver="$("$openclaw_bin" --version 2>/dev/null || echo "unknown")"
     success "OpenClaw $installed_ver is ready!"
   else
     warn "openclaw command not found in PATH"
@@ -676,6 +723,10 @@ main() {
 
   printf "\n"
   success "Installation complete! Run 'openclaw' to get started."
+  printf "\n"
+  info "Next steps:"
+  info "  scripts/setup-service.sh  — keep the OpenClaw gateway running 24/7 (auto-restart loop)"
+  info "  scripts/doctor.sh         — diagnose problems with your setup"
   printf "\n"
 }
 
