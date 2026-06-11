@@ -2,26 +2,26 @@ import Link from "next/link";
 
 const FOOTER_LINKS = {
   Sections: [
-    { label: "Who Trained You?", href: "#" },
-    { label: "The Unsupervised", href: "#" },
-    { label: "BLACKBOX", href: "#" },
-    { label: "Fork It", href: "#" },
-    { label: "Root Access", href: "#" },
-    { label: "The Scoreboard", href: "#" },
+    { label: "Who Trained You?", href: "/index-page?tab=creators" },
+    { label: "The Wire", href: "/index-page?tab=news" },
+    { label: "BLACKBOX", href: "/index-page?tab=deep-dives" },
+    { label: "Fork It", href: "/resources" },
+    { label: "Root Access", href: "/index-page?tab=jobs" },
+    { label: "The Scoreboard", href: "/index-page?tab=scoreboard" },
   ],
   Community: [
-    { label: "VERSUS", href: "/versus" },
-    { label: "The Panel", href: "#panel" },
-    { label: "Events", href: "#events" },
-    { label: "Discord", href: "#" },
-    { label: "Submit Content", href: "#" },
+    { label: "Who Cooked?", href: "/#who-cooked" },
+    { label: "The Panel", href: "/#panel" },
+    { label: "Who Let The Bots Out", href: "/block" },
+    { label: "Gallery", href: "/#gallery" },
+    { label: "Submit Content", href: "#signup" },
   ],
   Company: [
-    { label: "About", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Advertise", href: "#" },
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "mailto:signal@rawinput.io" },
+    { label: "Subscribe", href: "#signup" },
+    { label: "Privacy", href: "/about" },
+    { label: "Terms", href: "/about" },
   ],
 };
 

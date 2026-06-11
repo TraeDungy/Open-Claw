@@ -261,13 +261,13 @@ export default function SignupForm() {
                         Sunday — plus your personal AI chatbot is ready.
                       </p>
                       <motion.a
-                        href="#"
+                        href="/block"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                         className="inline-block bg-input text-void px-8 py-4 rounded-sm text-sm font-bold uppercase tracking-widest hover:bg-white transition-colors mt-4"
                       >
-                        Open Your Chatbot
+                        Enter Who Let The Bots Out
                       </motion.a>
                     </div>
                   ) : (

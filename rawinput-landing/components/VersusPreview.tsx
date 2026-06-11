@@ -91,6 +91,7 @@ export default function VersusPreview() {
     generic: { name: string; response: string };
     culture: { name: string; response: string };
   } | null>(null);
+  const [liveVote, setLiveVote] = useState<"generic" | "culture" | null>(null);
 
   const battle = SAMPLE_BATTLES[active];
 
@@ -363,11 +364,25 @@ export default function VersusPreview() {
                       </div>
 
                       <div className="flex justify-center gap-4 mt-4">
-                        <button className="border border-chrome/20 text-chrome px-5 py-2 rounded-sm text-xs font-bold hover:border-chrome transition-all">
-                          Vanilla Cooked
+                        <button
+                          onClick={() => setLiveVote("generic")}
+                          className={`border px-5 py-2 rounded-sm text-xs font-bold transition-all ${
+                            liveVote === "generic"
+                              ? "bg-chrome text-void border-chrome"
+                              : "border-chrome/20 text-chrome hover:border-chrome"
+                          }`}
+                        >
+                          {liveVote === "generic" ? "Voted!" : "Vanilla Cooked"}
                         </button>
-                        <button className="border border-input text-input px-5 py-2 rounded-sm text-xs font-bold hover:bg-input hover:text-void transition-all">
-                          Raw Input Cooked
+                        <button
+                          onClick={() => setLiveVote("culture")}
+                          className={`border px-5 py-2 rounded-sm text-xs font-bold transition-all ${
+                            liveVote === "culture"
+                              ? "bg-input text-void border-input"
+                              : "border-input text-input hover:bg-input hover:text-void"
+                          }`}
+                        >
+                          {liveVote === "culture" ? "Voted!" : "Raw Input Cooked"}
                         </button>
                       </div>
                     </motion.div>

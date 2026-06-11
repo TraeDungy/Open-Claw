@@ -329,7 +329,7 @@ export default function AgentCards() {
 
                           {/* CTA */}
                           <a
-                            href="#"
+                            href="mailto:signal@rawinput.io?subject=Agent%20Inquiry"
                             onClick={(e) => e.stopPropagation()}
                             className={`block w-full text-center py-3 rounded-sm text-sm font-bold uppercase tracking-widest text-void transition-colors ${accentBg} hover:bg-white`}
                           >
@@ -356,7 +356,7 @@ export default function AgentCards() {
               Flavor-tuned or industry-specific — your call.
             </p>
             <a
-              href="#"
+              href="mailto:signal@rawinput.io?subject=Custom%20Agent%20Build"
               className="bg-terminal text-void px-8 py-4 rounded-sm text-sm font-bold uppercase tracking-widest hover:bg-white transition-colors inline-block"
             >
               Contact for Custom Build

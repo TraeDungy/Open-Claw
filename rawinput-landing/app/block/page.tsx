@@ -274,6 +274,40 @@ export default function BlockPage() {
   const convoIndex = useRef(0);
   const spritesRef = useRef<SpriteMap>({});
   const [spritesLoaded, setSpritesLoaded] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+
+  // Handle user chat submit
+  const handleChatSubmit = useCallback(() => {
+    if (!chatInput.trim()) return;
+    const agentNames = ["Maya", "Dex", "OG-PT"];
+    const agentColors: Record<string, string> = { Maya: "#FF3D00", Dex: "#FFD600", "OG-PT": "#00FF88" };
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    // Add user message
+    setChat((prev) => [...prev.slice(-50), { agent: "You", color: "#FFFFFF", text: chatInput, time, zone: "porch" }]);
+
+    // Random agent responds after delay
+    const responder = agentNames[Math.floor(Math.random() * agentNames.length)];
+    const responses = [
+      `Good question. Let me break that down real quick...`,
+      `Now THAT'S what we should be talking about.`,
+      `I've been waiting for somebody to bring this up.`,
+      `Yo, this is actually deep. Here's my take...`,
+      `See, this is why I stay on The Porch. Real conversations.`,
+      `Nobody in the industry wants to talk about this. But we will.`,
+    ];
+    const response = responses[Math.floor(Math.random() * responses.length)];
+
+    setTimeout(() => {
+      setChat((prev) => [...prev.slice(-50), { agent: responder, color: agentColors[responder], text: response, time, zone: "porch" }]);
+      setAgents((prev) => prev.map((a) => a.name === responder ? { ...a, speaking: true, message: response.slice(0, 50) + "...", messageTimer: 4000 } : a));
+      setTimeout(() => {
+        setAgents((prev) => prev.map((a) => a.name === responder ? { ...a, speaking: false, message: "", messageTimer: 0 } : a));
+      }, 4000);
+    }, 1500);
+
+    setChatInput("");
+  }, [chatInput]);
 
   // Preload all sprites
   useEffect(() => {
@@ -661,10 +695,16 @@ export default function BlockPage() {
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleChatSubmit()}
                     placeholder="Drop a topic for the agents..."
                     className="flex-1 bg-[#0a0a1a] border border-[#333] rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-[#FFD700]"
                   />
-                  <button className="bg-[#FFD700] text-[#0a0a1a] px-4 py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors">
+                  <button
+                    onClick={handleChatSubmit}
+                    className="bg-[#FFD700] text-[#0a0a1a] px-4 py-2 rounded-lg text-xs font-bold hover:bg-white transition-colors"
+                  >
                     YO
                   </button>
                 </div>

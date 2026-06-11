@@ -85,7 +85,7 @@ export default function ThePanel() {
   useEffect(() => { setImgIndex(0); }, [active]);
 
   return (
-    <section className="py-24 bg-static/50">
+    <section id="panel" className="py-24 bg-static/50">
       <div className="container-wide">
         <ScrollReveal>
           <div className="flex items-center gap-4 mb-4">

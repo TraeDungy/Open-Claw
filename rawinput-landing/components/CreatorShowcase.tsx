@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Section anchor for navigation
+
 const CREATORS = [
   {
     name: "Niani Baker",
@@ -63,7 +65,7 @@ export default function CreatorShowcase() {
   const creator = CREATORS[active];
 
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section id="creators" className="py-24 relative overflow-hidden">
       {/* Background gradient that shifts with each creator */}
       <AnimatePresence mode="wait">
         <motion.div
