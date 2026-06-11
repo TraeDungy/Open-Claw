@@ -54,6 +54,9 @@ const COMMANDS_WITH_COMPANY_ID = new Set([
 ]);
 
 function run(argArray) {
+  if (!CLI) {
+    throw new Error('PAPERCLIP_CLI is not set — check .env (see .env.example)');
+  }
   const cmdKey = `${argArray[0]}:${argArray[1]}`;
   const companyArgs = COMMANDS_WITH_COMPANY_ID.has(cmdKey) ? ['-C', COMPANY_ID] : [];
   const args = ['--', CLI, ...argArray, ...companyArgs];

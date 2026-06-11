@@ -1,6 +1,26 @@
 # 🦞 Open-Claw
 
-Installer and keep-alive tooling for [OpenClaw](https://www.npmjs.com/package/openclaw) — gets it installed, keeps it running, and tells you what's wrong when it isn't.
+Open Claw infrastructure for Trial X Fire: the BIG BOSS CEO autonomous agent system, plus installer and keep-alive tooling for [OpenClaw](https://www.npmjs.com/package/openclaw).
+
+## BIG BOSS CEO bot (`big-boss-ceo-bot/`)
+
+Telegram-driven autonomous operations: a CEO loop (every 15 min) and four PM loops (30–45 min) review the Paperclip board via LLM and create/assign/close/reassign work; a notifier loop (every 2 min) pushes alerts to Telegram.
+
+```bash
+cd big-boss-ceo-bot
+cp .env.example .env   # fill in real tokens — never commit .env
+npm install
+pm2 start ecosystem.config.cjs
+```
+
+Loop reliability features:
+
+- **No overlapping cycles** — loops are chained timeouts, so a slow LLM/CLI call can't stack cycles on top of each other.
+- **Action memory** — the CEO and PMs see their own last 24h of actions in context (persisted in `state.json`), so they don't repeat themselves across cycles and restarts.
+- **Duplicate-issue guard** — `CREATE_ISSUE` actions matching an open issue title (or one created in the last 24h) are skipped.
+- **Wakeup throttle** — an agent is woken at most once per hour, globally across the CEO and all PM loops.
+- **LLM timeout + retry** — LiteLLM calls time out after 120s (`LITELLM_TIMEOUT_MS`) and retry once instead of hanging a cycle forever.
+- **Quiet bootstrap** — with a fresh `state.json`, the notifier marks all existing issues seen silently instead of flooding Telegram on first boot.
 
 ## Quick start
 

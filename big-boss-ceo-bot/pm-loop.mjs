@@ -10,6 +10,11 @@ import {
   updateIssue, closeIssue, reassignIssue, wakeupAgent,
 } from './paperclip.mjs';
 import { chat } from './llm.mjs';
+import { startLoop, parseActionLines, isDuplicateTitle } from './loop-utils.mjs';
+import { recordAction, getRecentActions } from './state.mjs';
+
+const ACTION_MEMORY_MS = 24 * 60 * 60 * 1000;
+const WAKEUP_THROTTLE_MS = 60 * 60 * 1000;
 
 // PM configuration — each entry defines one PM's scope, team, and decision authority
 const PM_CONFIGS = [
@@ -82,12 +87,21 @@ function buildPMContext(config) {
   const myInProgress = allInProgress.filter(matches).slice(0, 15);
   const myBlocked = allBlocked.filter(matches).slice(0, 10);
 
+  // All open titles in this PM's view — used to block duplicate CREATE
+  const openTitles = [...allOpen, ...allInProgress, ...allBlocked]
+    .map(i => i.title).filter(Boolean);
+
+  const recent = getRecentActions(ACTION_MEMORY_MS, `pm:${config.name}`);
+  const recentLines = recent.map(a =>
+    `${new Date(a.ts).toISOString().slice(0, 16)} ${a.type}: ${a.summary}`
+  ).join('\n');
+
   const issueLines = (issues) =>
     issues.map(i =>
       `[${i.identifier}] ${i.title} | priority:${i.priority || '?'} | assignee:${i.assigneeAgentId || 'UNASSIGNED'} | id:${i.id || i.identifier}`
     ).join('\n') || 'None';
 
-  return `
+  const text = `
 === YOUR DOMAIN: ${config.role} ===
 
 === YOUR TEAM ===
@@ -101,33 +115,37 @@ ${issueLines(myInProgress)}
 
 === YOUR BLOCKED (${myBlocked.length}) ===
 ${issueLines(myBlocked)}
+
+=== YOUR ACTIONS IN THE LAST 24H (do NOT repeat these) ===
+${recentLines || 'None'}
 `.trim();
+
+  return { text, openTitles };
 }
 
+const PM_VERB_MAP = {
+  ASSIGN: 'assign',
+  CREATE: 'create',
+  CLOSE: 'close',
+  WAKEUP: 'wakeup',
+  ESCALATE_CEO: 'escalate_ceo',
+};
+
 function parsePMActions(text) {
-  const actions = [];
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('ACTION:ASSIGN')) {
-      try { actions.push({ type: 'assign', ...JSON.parse(trimmed.replace('ACTION:ASSIGN', '').trim()) }); } catch {}
-    } else if (trimmed.startsWith('ACTION:CREATE')) {
-      try { actions.push({ type: 'create', ...JSON.parse(trimmed.replace('ACTION:CREATE', '').trim()) }); } catch {}
-    } else if (trimmed.startsWith('ACTION:CLOSE')) {
-      try { actions.push({ type: 'close', ...JSON.parse(trimmed.replace('ACTION:CLOSE', '').trim()) }); } catch {}
-    } else if (trimmed.startsWith('ACTION:WAKEUP')) {
-      try { actions.push({ type: 'wakeup', ...JSON.parse(trimmed.replace('ACTION:WAKEUP', '').trim()) }); } catch {}
-    } else if (trimmed.startsWith('ACTION:ESCALATE_CEO')) {
-      const msg = trimmed.replace('ACTION:ESCALATE_CEO', '').trim();
-      actions.push({ type: 'escalate_ceo', message: msg });
-    }
-  }
-  return actions;
+  return parseActionLines(text)
+    .map(({ verb, params, message }) => {
+      const type = PM_VERB_MAP[verb];
+      if (!type) return null;
+      if (type === 'escalate_ceo') return { type, message: message ?? params?.message ?? '' };
+      return { type, ...params };
+    })
+    .filter(Boolean);
 }
 
 async function runPMCycle(config, sendFn) {
   console.log(`[pm-loop:${config.name}] running cycle...`);
 
-  const context = buildPMContext(config);
+  const { text: context, openTitles } = buildPMContext(config);
 
   const systemPrompt = `You are ${config.name} — an autonomous project manager at Trial X Fire.
 
@@ -165,32 +183,56 @@ If no action needed: NO_ACTION_NEEDED`;
 
   console.log(`[pm-loop:${config.name}] response:\n`, response);
 
-  if (!response || response.includes('NO_ACTION_NEEDED')) return null;
+  // Parse first — a stray NO_ACTION_NEEDED mention used to discard real actions
+  const actions = parsePMActions(response || '');
+  if (actions.length === 0) return null;
 
-  const actions = parsePMActions(response);
+  const loopName = `pm:${config.name}`;
+  const recentCreatedTitles = getRecentActions(ACTION_MEMORY_MS, loopName)
+    .filter(a => a.type === 'create_issue')
+    .map(a => a.summary);
+
   const results = [];
 
   for (const action of actions.slice(0, 4)) {
     try {
       if (action.type === 'assign') {
         reassignIssue(action.issueId, action.agentId);
+        recordAction(loopName, { type: 'assign', summary: `${action.issueId} → ${action.agentId}` });
         results.push(`🎯 Assigned ${action.issueId} — ${action.reason}`);
 
       } else if (action.type === 'create') {
+        if (isDuplicateTitle(action.title, [...openTitles, ...recentCreatedTitles])) {
+          console.log(`[pm-loop:${config.name}] skipped duplicate issue:`, action.title);
+          results.push(`⏭️ Skipped duplicate: ${action.title}`);
+          continue;
+        }
         createIssue({
           title: action.title,
           body: action.body,
           assigneeAgentId: action.agentId,
           priority: action.priority || 'high',
         });
+        recordAction(loopName, { type: 'create_issue', summary: action.title });
+        recentCreatedTitles.push(action.title);
         results.push(`📝 Created: ${action.title}`);
 
       } else if (action.type === 'close') {
         closeIssue(action.issueId);
+        recordAction(loopName, { type: 'close_issue', summary: action.issueId });
         results.push(`✅ Closed ${action.issueId}`);
 
       } else if (action.type === 'wakeup') {
+        // Throttle is global across CEO + all PM loops so an agent isn't
+        // double-woken by two loops in the same hour
+        const recentWake = getRecentActions(WAKEUP_THROTTLE_MS)
+          .some(a => a.type === 'wakeup' && a.agentId === action.agentId);
+        if (recentWake) {
+          console.log(`[pm-loop:${config.name}] skipped wakeup (woken within the last hour):`, action.agentId);
+          continue;
+        }
         await wakeupAgent(action.agentId, action.reason);
+        recordAction(loopName, { type: 'wakeup', summary: action.reason || '', agentId: action.agentId });
         results.push(`⚡ Woke up agent: ${action.reason}`);
 
       } else if (action.type === 'escalate_ceo') {
@@ -201,6 +243,7 @@ If no action needed: NO_ACTION_NEEDED`;
           assigneeAgentId: '010acbc6-304f-4e92-a308-e005d5ea892e', // BIG BOSS CEO
           priority: 'high',
         });
+        recordAction(loopName, { type: 'escalate_ceo', summary: (action.message || '').slice(0, 120) });
         results.push(`🚨 Escalated to CEO`);
       }
     } catch (err) {
@@ -217,27 +260,21 @@ If no action needed: NO_ACTION_NEEDED`;
 
 export function startAllPMLoops(sendFn) {
   for (const config of PM_CONFIGS) {
-    setTimeout(() => {
-      async function tick() {
-        try {
-          const outcome = await runPMCycle(config, sendFn);
-          if (outcome && outcome.results.length > 0 && sendFn) {
-            const msg = [
-              `🗂️ *${config.name} Cycle*`,
-              outcome.analysis ? `_${outcome.analysis.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')}_` : '',
-              ...outcome.results,
-            ].filter(Boolean).join('\n');
-            await sendFn(msg);
-          }
-        } catch (err) {
-          console.error(`[pm-loop:${config.name}] tick error:`, err.message);
-        }
+    // Chained timeouts (via startLoop) instead of setInterval: a slow cycle
+    // can no longer overlap or stack with the next one.
+    startLoop(`pm-loop:${config.name}`, async () => {
+      const outcome = await runPMCycle(config, sendFn);
+      if (outcome && outcome.results.length > 0 && sendFn) {
+        const msg = [
+          `🗂️ *${config.name} Cycle*`,
+          outcome.analysis ? `_${outcome.analysis.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')}_` : '',
+          ...outcome.results,
+        ].filter(Boolean).join('\n');
+        await sendFn(msg);
       }
+    }, { intervalMs: config.intervalMs, initialDelayMs: config.startDelayMs });
 
-      tick(); // Run once immediately after stagger delay
-      setInterval(tick, config.intervalMs);
-      console.log(`[pm-loop:${config.name}] loop started every ${config.intervalMs / 1000 / 60}min`);
-    }, config.startDelayMs);
+    console.log(`[pm-loop:${config.name}] loop scheduled every ${config.intervalMs / 1000 / 60}min (first run in ${config.startDelayMs / 1000 / 60}min)`);
   }
 
   console.log(`[pm-loop] ${PM_CONFIGS.length} PM loops scheduled`);

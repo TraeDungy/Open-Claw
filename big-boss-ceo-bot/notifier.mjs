@@ -10,7 +10,8 @@
  *   7. Startup priorities push
  */
 import { listIssues, listAgents } from './paperclip.mjs';
-import { hasSeen, markSeen, setLastPoll } from './state.mjs';
+import { hasSeen, markSeen, setLastPoll, getState } from './state.mjs';
+import { startLoop } from './loop-utils.mjs';
 
 const CEO_ID = process.env.CEO_AGENT_ID;
 
@@ -86,7 +87,15 @@ export function startNotifier(sendFn) {
   // Push priorities immediately on boot
   setTimeout(() => pushStartupPriorities(sendFn), 5000);
 
+  // Fresh state (first ever run or state.json lost): the first poll marks
+  // everything currently in Paperclip as seen WITHOUT alerting, so boot
+  // doesn't flood Telegram with every historical done/blocked issue.
+  let quiet = !getState().lastPollAt;
+
   async function poll() {
+    const notify = quiet
+      ? async () => {}
+      : sendFn;
     try {
       setLastPoll(new Date().toISOString());
 
@@ -98,7 +107,7 @@ export function startNotifier(sendFn) {
           markSeen(issue.id, 'assigned');
           const priority = (issue.priority || 'normal').toUpperCase();
           const status = issue.status || 'todo';
-          await sendFn([
+          await notify([
             `📋 *New issue assigned to CEO*`,
             ``,
             `*${escapeMarkdown(issue.identifier)}* — ${escapeMarkdown(issue.title)}`,
@@ -113,7 +122,7 @@ export function startNotifier(sendFn) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'done')) {
           markSeen(issue.id, 'done');
-          await sendFn([
+          await notify([
             `✅ *Task completed*`,
             ``,
             `*${escapeMarkdown(issue.identifier)}* — ${escapeMarkdown(issue.title)}`,
@@ -127,7 +136,7 @@ export function startNotifier(sendFn) {
         if (!issue.id) continue;
         if (isAgentProposal(issue) && !hasSeen(issue.id, 'proposal')) {
           markSeen(issue.id, 'proposal');
-          await sendFn([
+          await notify([
             `🤖 *New Agent Proposal*`,
             ``,
             `*${escapeMarkdown(issue.identifier)}* — ${escapeMarkdown(issue.title)}`,
@@ -142,7 +151,7 @@ export function startNotifier(sendFn) {
       for (const agent of agents) {
         if (agent.status === 'error' && !hasSeen(agent.id, 'error')) {
           markSeen(agent.id, 'error');
-          await sendFn(`⚠️ *Agent error:* ${escapeMarkdown(agent.name)}\nCEO will investigate and reassign work\\.`);
+          await notify(`⚠️ *Agent error:* ${escapeMarkdown(agent.name)}\nCEO will investigate and reassign work\\.`);
         }
       }
 
@@ -153,7 +162,7 @@ export function startNotifier(sendFn) {
         if (!issue.id) continue;
         if (!hasSeen(issue.id, 'stale_blocked')) {
           markSeen(issue.id, 'stale_blocked');
-          await sendFn([
+          await notify([
             `🛑 *Blocked with no owner*`,
             ``,
             `*${escapeMarkdown(issue.identifier)}* — ${escapeMarkdown((issue.title || '').slice(0, 80))}`,
@@ -173,7 +182,7 @@ export function startNotifier(sendFn) {
         const topIssues = unassignedCritical.slice(0, 3).map(i =>
           `• *${escapeMarkdown(i.identifier)}* — ${escapeMarkdown((i.title || '').slice(0, 60))}`
         ).join('\n');
-        await sendFn([
+        await notify([
           `⚡ *${unassignedCritical.length} critical issues have no owner*`,
           ``,
           topIssues,
@@ -182,12 +191,16 @@ export function startNotifier(sendFn) {
         ].join('\n'));
       }
 
+      if (quiet) {
+        console.log('[notifier] bootstrap poll complete — existing items marked seen silently');
+        quiet = false;
+      }
     } catch (err) {
       console.error('[notifier] poll error:', err.message);
     }
   }
 
-  poll();
-  setInterval(poll, interval);
+  // Chained timeouts (via startLoop) so a slow poll can't overlap the next one
+  startLoop('notifier', poll, { intervalMs: interval, initialDelayMs: 0 });
   console.log(`[notifier] polling every ${interval / 1000}s`);
 }

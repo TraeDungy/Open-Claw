@@ -8,6 +8,11 @@ import {
   updateIssue, closeIssue, reassignIssue, wakeupAgent, getDashboard,
 } from './paperclip.mjs';
 import { chat } from './llm.mjs';
+import { startLoop, parseActionLines, isDuplicateTitle } from './loop-utils.mjs';
+import { recordAction, getRecentActions } from './state.mjs';
+
+const ACTION_MEMORY_MS = 24 * 60 * 60 * 1000;  // how far back the CEO remembers
+const WAKEUP_THROTTLE_MS = 60 * 60 * 1000;     // min gap between wakeups per agent
 
 // Full agent roster — all agents CEO can delegate to or wake up
 const AGENT_ROSTER = {
@@ -49,8 +54,18 @@ function buildContext() {
   const inProgress = listIssues({ status: 'in_progress', limit: 25 });
   const blocked = listIssues({ status: 'blocked', limit: 20 });
   const criticalTodo = listIssues({ status: 'todo', priority: 'critical', limit: 30 });
-  const unassigned = listIssues({ status: 'todo', limit: 50 }).filter(i => !i.assigneeAgentId).slice(0, 20);
+  const allTodo = listIssues({ status: 'todo', limit: 50 });
+  const unassigned = allTodo.filter(i => !i.assigneeAgentId).slice(0, 20);
   const agents = listAgents();
+
+  // Every open title the CEO can see — used to block duplicate CREATE_ISSUE
+  const openTitles = [...inProgress, ...blocked, ...criticalTodo, ...allTodo]
+    .map(i => i.title).filter(Boolean);
+
+  const recent = getRecentActions(ACTION_MEMORY_MS, 'ceo');
+  const recentLines = recent.map(a =>
+    `${new Date(a.ts).toISOString().slice(0, 16)} ${a.type}: ${a.summary}`
+  ).join('\n');
 
   const agentSummary = agents.map(a =>
     `${a.name} [${a.id}] (${a.status || 'unknown'})`
@@ -61,7 +76,7 @@ function buildContext() {
       `[${i.identifier}] ${i.title} | status:${i.status || '?'} | priority:${i.priority || '?'} | assignee:${i.assigneeAgentId || 'UNASSIGNED'} | id:${i.id || i.identifier}`
     ).join('\n');
 
-  return `
+  const text = `
 === DASHBOARD ===
 Open: ${dashboard?.tasks?.open || '?'} | In Progress: ${dashboard?.tasks?.inProgress || '?'} | Blocked: ${dashboard?.tasks?.blocked || '?'} | Done: ${dashboard?.tasks?.done || '?'}
 Agents running: ${dashboard?.agents?.running || '?'} / ${dashboard?.agents?.active || '?'} active | In error: ${dashboard?.agents?.error || '?'}
@@ -86,46 +101,39 @@ ${agentSummary}
 
 === AGENTS AVAILABLE FOR DELEGATION ===
 ${Object.entries(AGENT_ROSTER).map(([name, id]) => `${name}: ${id}`).join('\n')}
+
+=== YOUR ACTIONS IN THE LAST 24H (do NOT repeat these) ===
+${recentLines || 'None'}
 `.trim();
+
+  return { text, openTitles };
 }
 
+const VERB_MAP = {
+  CREATE_ISSUE: 'create_issue',
+  COMMENT: 'comment',
+  WAKEUP_AGENT: 'wakeup_agent',
+  CLOSE_ISSUE: 'close_issue',
+  REASSIGN: 'reassign',
+  ESCALATE: 'escalate',
+};
+
 function parseActions(text) {
-  const actions = [];
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('ACTION:CREATE_ISSUE')) {
-      try {
-        actions.push({ type: 'create_issue', ...JSON.parse(trimmed.replace('ACTION:CREATE_ISSUE', '').trim()) });
-      } catch {}
-    } else if (trimmed.startsWith('ACTION:COMMENT')) {
-      try {
-        actions.push({ type: 'comment', ...JSON.parse(trimmed.replace('ACTION:COMMENT', '').trim()) });
-      } catch {}
-    } else if (trimmed.startsWith('ACTION:WAKEUP_AGENT')) {
-      try {
-        actions.push({ type: 'wakeup_agent', ...JSON.parse(trimmed.replace('ACTION:WAKEUP_AGENT', '').trim()) });
-      } catch {}
-    } else if (trimmed.startsWith('ACTION:CLOSE_ISSUE')) {
-      try {
-        actions.push({ type: 'close_issue', ...JSON.parse(trimmed.replace('ACTION:CLOSE_ISSUE', '').trim()) });
-      } catch {}
-    } else if (trimmed.startsWith('ACTION:REASSIGN')) {
-      try {
-        actions.push({ type: 'reassign', ...JSON.parse(trimmed.replace('ACTION:REASSIGN', '').trim()) });
-      } catch {}
-    } else if (trimmed.startsWith('ACTION:ESCALATE')) {
-      const msg = trimmed.replace('ACTION:ESCALATE', '').trim();
-      actions.push({ type: 'escalate', message: msg });
-    }
-  }
-  return actions;
+  return parseActionLines(text)
+    .map(({ verb, params, message }) => {
+      const type = VERB_MAP[verb];
+      if (!type) return null;
+      if (type === 'escalate') return { type, message: message ?? params?.message ?? '' };
+      return { type, ...params };
+    })
+    .filter(Boolean);
 }
 
 export async function runCycle() {
   const sendFn = _sendFn;
   console.log('[ceo-loop] running decision cycle...');
 
-  const context = buildContext();
+  const { text: context, openTitles } = buildContext();
 
   const systemPrompt = `You are BIG BOSS CEO — the fully autonomous chief executive of Trial X Fire, a content distribution company operating FAST channels, OTT platforms, and video delivery pipelines.
 
@@ -173,17 +181,32 @@ If no action is needed, output exactly: NO_ACTION_NEEDED`;
 
   console.log('[ceo-loop] LLM response:\n', response);
 
-  if (!response || response.includes('NO_ACTION_NEEDED')) {
-    console.log('[ceo-loop] no action needed this cycle');
+  // Parse first, then decide — a stray NO_ACTION_NEEDED mention used to
+  // discard real actions in the same response.
+  const actions = parseActions(response || '');
+  if (actions.length === 0) {
+    if (response && !response.includes('NO_ACTION_NEEDED')) {
+      console.log('[ceo-loop] response had no parseable actions');
+    } else {
+      console.log('[ceo-loop] no action needed this cycle');
+    }
     return null;
   }
 
-  const actions = parseActions(response);
+  const recentCreatedTitles = getRecentActions(ACTION_MEMORY_MS, 'ceo')
+    .filter(a => a.type === 'create_issue')
+    .map(a => a.summary);
+
   const results = [];
 
   for (const action of actions.slice(0, 6)) {
     try {
       if (action.type === 'create_issue') {
+        if (isDuplicateTitle(action.title, [...openTitles, ...recentCreatedTitles])) {
+          console.log('[ceo-loop] skipped duplicate issue:', action.title);
+          results.push(`⏭️ Skipped duplicate: ${action.title}`);
+          continue;
+        }
         const out = createIssue({
           title: action.title,
           body: action.body,
@@ -191,32 +214,45 @@ If no action is needed, output exactly: NO_ACTION_NEEDED`;
           priority: action.priority || 'high',
         });
         console.log('[ceo-loop] created issue:', out);
+        recordAction('ceo', { type: 'create_issue', summary: action.title });
+        recentCreatedTitles.push(action.title);
         results.push(`📝 Created: *${action.title}*`);
 
       } else if (action.type === 'comment') {
         commentIssue(action.issueId, action.body);
         console.log('[ceo-loop] commented on:', action.issueId);
+        recordAction('ceo', { type: 'comment', summary: action.issueId });
         results.push(`💬 Commented on ${action.issueId}`);
 
       } else if (action.type === 'wakeup_agent') {
+        const recentWake = getRecentActions(WAKEUP_THROTTLE_MS)
+          .some(a => a.type === 'wakeup' && a.agentId === action.agentId);
+        if (recentWake) {
+          console.log('[ceo-loop] skipped wakeup (woken within the last hour):', action.agentId);
+          continue;
+        }
         await wakeupAgent(action.agentId, action.reason);
         console.log('[ceo-loop] woke up agent:', action.agentId);
         const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === action.agentId)?.[0] || action.agentId;
+        recordAction('ceo', { type: 'wakeup', summary: `${name}: ${action.reason || ''}`, agentId: action.agentId });
         results.push(`⚡ Woke up *${name}*: ${action.reason}`);
 
       } else if (action.type === 'close_issue') {
         closeIssue(action.issueId);
         console.log('[ceo-loop] closed issue:', action.issueId);
+        recordAction('ceo', { type: 'close_issue', summary: action.issueId });
         results.push(`✅ Closed ${action.issueId}`);
 
       } else if (action.type === 'reassign') {
         reassignIssue(action.issueId, action.agentId);
         console.log('[ceo-loop] reassigned:', action.issueId, '→', action.agentId);
         const name = Object.entries(AGENT_ROSTER).find(([, id]) => id === action.agentId)?.[0] || action.agentId;
+        recordAction('ceo', { type: 'reassign', summary: `${action.issueId} → ${name}` });
         results.push(`🔄 Reassigned ${action.issueId} → *${name}*`);
 
       } else if (action.type === 'escalate') {
         if (sendFn) await sendFn(`🚨 *CEO Escalation*\n\n${action.message}`);
+        recordAction('ceo', { type: 'escalate', summary: (action.message || '').slice(0, 120) });
         results.push(`🚨 Escalated to owner`);
       }
     } catch (err) {
@@ -236,27 +272,22 @@ export function startCEOLoop(sendFn) {
   _sendFn = sendFn;
   const interval = parseInt(process.env.CEO_LOOP_INTERVAL_MS || '900000');
 
-  async function tick() {
-    try {
-      const outcome = await runCycle();
-      if (outcome && outcome.results.length > 0 && sendFn) {
-        const msg = [
-          `🤖 *CEO Cycle*`,
-          ``,
-          outcome.analysis ? `_${outcome.analysis.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')}_` : '',
-          ``,
-          `*Actions:*`,
-          ...outcome.results,
-        ].filter(Boolean).join('\n');
-        await sendFn(msg);
-      }
-    } catch (err) {
-      console.error('[ceo-loop] tick error:', err.message);
+  // Chained timeouts (via startLoop) instead of setInterval: a slow cycle
+  // can no longer overlap or stack with the next one.
+  startLoop('ceo-loop', async () => {
+    const outcome = await runCycle();
+    if (outcome && outcome.results.length > 0 && sendFn) {
+      const msg = [
+        `🤖 *CEO Cycle*`,
+        ``,
+        outcome.analysis ? `_${outcome.analysis.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')}_` : '',
+        ``,
+        `*Actions:*`,
+        ...outcome.results,
+      ].filter(Boolean).join('\n');
+      await sendFn(msg);
     }
-  }
+  }, { intervalMs: interval, initialDelayMs: 30000 });
 
-  // First run after 30s startup delay
-  setTimeout(tick, 30000);
-  setInterval(tick, interval);
   console.log(`[ceo-loop] autonomous loop every ${interval / 1000 / 60}min`);
 }
