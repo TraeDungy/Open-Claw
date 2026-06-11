@@ -22,6 +22,15 @@ Loop reliability features:
 - **LLM timeout + retry** — LiteLLM calls time out after 120s (`LITELLM_TIMEOUT_MS`) and retry once instead of hanging a cycle forever.
 - **Quiet bootstrap** — with a fresh `state.json`, the notifier marks all existing issues seen silently instead of flooding Telegram on first boot.
 
+### Security
+
+- **Owner-only commands** — every `/command` is restricted to the owner chat (`CHAT_ID`); previously any chat could trigger `/push`, `/cycle`, `/done`, etc.
+- **Suspicious-activity monitor** (`security-monitor.mjs`) alerts you on Telegram when:
+  - another process polls with your bot token (409 conflict — the classic stolen-token signal),
+  - a webhook gets set on the bot while it runs in polling mode (auto-cleared),
+  - an unknown chat messages the bot (one alert per chat, all attempts logged).
+- **Token rotation** — after any exposure, get a fresh token from @BotFather (`/revoke`), then run `scripts/rotate-secrets.sh` on the VPS: it validates the new token, updates `.env`, optionally rotates the LiteLLM key, and restarts the bot.
+
 ## Quick start
 
 ```bash

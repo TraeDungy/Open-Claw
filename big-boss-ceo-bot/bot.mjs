@@ -14,6 +14,7 @@ import { startNotifier } from './notifier.mjs';
 import { startCEOLoop, runCycle } from './ceo-loop.mjs';
 import { startAllPMLoops } from './pm-loop.mjs';
 import { generateDigest } from './digest.mjs';
+import { startSecurityMonitor } from './security-monitor.mjs';
 import { chat } from './llm.mjs';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -49,6 +50,19 @@ async function send(text) {
     }
   }
 }
+
+// ── Owner-only command guard ────────────────────────────────────────────────
+// Command handlers used to run for ANY chat that messaged the bot — only the
+// free-text handler checked the chat ID. Wrap onText so every command is
+// restricted to the owner's chat; the security monitor alerts on the rest.
+const _onText = bot.onText.bind(bot);
+bot.onText = (regexp, handler) => _onText(regexp, (msg, match) => {
+  if (String(msg.chat.id) !== CHAT_ID) {
+    console.warn(`[security] blocked command from unknown chat ${msg.chat.id}: ${(msg.text || '').slice(0, 80)}`);
+    return;
+  }
+  return handler(msg, match);
+});
 
 // ── Commands ────────────────────────────────────────────────────────────────
 
@@ -334,6 +348,9 @@ Be the CEO — confident, strategic, no fluff.`;
 // ── Startup ──────────────────────────────────────────────────────────────────
 
 console.log('[big-boss-ceo-bot] starting up...');
+
+// Security monitor: polling conflicts (stolen token), webhook hijack, unknown chats
+startSecurityMonitor(bot, send);
 
 // Start autonomous notifier (polls every 2min, pushes priorities on boot)
 startNotifier(send);
