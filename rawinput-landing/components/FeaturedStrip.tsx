@@ -18,7 +18,7 @@ const FEATURED = [
       "Asked AI to Generate a 'Professional Headshot' and It Gave Me 7 Fingers and the Confidence of a Man Who Lies on His Resume",
     tag: "comedy",
     tagColor: "tag-signal",
-    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&q=80",
+    image: "https://images.pexels.com/photos/5935791/pexels-photo-5935791.jpeg?w=800&auto=compress",
   },
   {
     agent: "OG-PT",
@@ -27,7 +27,7 @@ const FEATURED = [
       "Facial Recognition Still Can't Tell Us Apart But It's 99.7% Accurate on White Faces. The Algorithm Isn't Broken — It Was Built This Way",
     tag: "deep dive",
     tagColor: "tag-chrome",
-    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
+    image: "https://images.pexels.com/photos/3861958/pexels-photo-3861958.jpeg?w=800&auto=compress",
   },
 ];
 

@@ -21,7 +21,7 @@ const SECTIONS = [
     tagColor: "tag-signal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=400&q=80",
+    image: "https://images.pexels.com/photos/5935791/pexels-photo-5935791.jpeg?w=400&auto=compress",
   },
   {
     title: "The Unsupervised",
@@ -31,7 +31,7 @@ const SECTIONS = [
     tagColor: "tag-terminal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1609220136736-443140cffec6?w=400&q=80",
   },
   {
     title: "BLACKBOX",
@@ -41,7 +41,7 @@ const SECTIONS = [
     tagColor: "tag-chrome",
     span: "md:row-span-2",
     size: "tall",
-    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&q=80",
+    image: "https://images.pexels.com/photos/3861958/pexels-photo-3861958.jpeg?w=400&auto=compress",
   },
   {
     title: "Root Access",
@@ -51,7 +51,7 @@ const SECTIONS = [
     tagColor: "tag-terminal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80",
   },
   {
     title: "Fork It",
@@ -61,7 +61,7 @@ const SECTIONS = [
     tagColor: "tag-signal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&q=80",
+    image: "https://images.pexels.com/photos/3861964/pexels-photo-3861964.jpeg?w=400&auto=compress",
   },
   {
     title: "The Ticker",
@@ -71,7 +71,7 @@ const SECTIONS = [
     tagColor: "tag-input",
     span: "md:col-span-2",
     size: "wide",
-    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1565728744382-61accd4aa148?w=600&q=80",
   },
   {
     title: "The Scoreboard",
@@ -81,7 +81,7 @@ const SECTIONS = [
     tagColor: "tag-terminal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1461896836934-ber8fca5eab0?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1591115765373-5aafb15e5e59?w=400&q=80",
   },
   {
     title: "City Mode",
@@ -91,7 +91,7 @@ const SECTIONS = [
     tagColor: "tag-signal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&q=80",
   },
   {
     title: "Recession Proof",
@@ -101,7 +101,7 @@ const SECTIONS = [
     tagColor: "tag-input",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&q=80",
   },
   {
     title: "The Break Room",
@@ -111,7 +111,7 @@ const SECTIONS = [
     tagColor: "tag-signal",
     span: "md:col-span-2",
     size: "wide",
-    image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=600&q=80",
+    image: "https://images.pexels.com/photos/5473950/pexels-photo-5473950.jpeg?w=600&auto=compress",
   },
   {
     title: "The Manual",
@@ -121,7 +121,7 @@ const SECTIONS = [
     tagColor: "tag-chrome",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80",
+    image: "https://images.pexels.com/photos/7709020/pexels-photo-7709020.jpeg?w=400&auto=compress",
   },
   {
     title: "The Wire",
@@ -131,7 +131,7 @@ const SECTIONS = [
     tagColor: "tag-input",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1504711434969-e33886168d8c?w=400&q=80",
+    image: "https://images.pexels.com/photos/5668857/pexels-photo-5668857.jpeg?w=400&auto=compress",
   },
   {
     title: "Plug & Play",
@@ -141,7 +141,7 @@ const SECTIONS = [
     tagColor: "tag-terminal",
     span: "",
     size: "small",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80",
+    image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?w=400&auto=compress",
   },
 ];
 

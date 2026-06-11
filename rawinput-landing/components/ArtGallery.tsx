@@ -18,7 +18,7 @@ const GALLERY_ITEMS = [
     medium: "Stable Diffusion + ComfyUI",
     category: "Robotic Portraiture",
     desc: "Black bodies reimagined as biomechanical sculptures. Chrome skin, gold circuitry, obsidian cores.",
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80",
   },
   {
     title: "The Last Cookout",
@@ -26,7 +26,7 @@ const GALLERY_ITEMS = [
     medium: "DALL-E 3 + After Effects",
     category: "AI Surrealism",
     desc: "What happens when AI tries to generate a family reunion? Uncanny valley meets the backyard.",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&q=80",
+    image: "https://images.pexels.com/photos/5473302/pexels-photo-5473302.jpeg?w=600&auto=compress",
   },
   {
     title: "Lagos 2099",
@@ -42,7 +42,7 @@ const GALLERY_ITEMS = [
     medium: "Processing + Midjourney",
     category: "Generative / Cultural",
     desc: "Cornrow patterns as data visualization. Each braid encodes information — population data, migration routes.",
-    image: "https://images.unsplash.com/photo-1633907284646-7abf4a195875?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&q=80",
   },
   {
     title: "Hoodie Algorithms",
@@ -50,7 +50,7 @@ const GALLERY_ITEMS = [
     medium: "ComfyUI + ControlNet",
     category: "Street x Tech",
     desc: "AI-generated streetwear where the patterns are literal code. Python scripts woven into fabric.",
-    image: "https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?w=600&q=80",
+    image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?w=600&auto=compress",
   },
 ];
 

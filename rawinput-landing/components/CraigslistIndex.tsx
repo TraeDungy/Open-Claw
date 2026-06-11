@@ -151,6 +151,22 @@ const CATEGORIES = [
     ],
   },
   {
+    heading: "MUSIC & SOUND",
+    color: "text-input",
+    links: [
+      { label: "AI music tools", tab: "music" },
+      { label: "new releases", tab: "music" },
+      { label: "producer tech", tab: "music" },
+      { label: "beat making x AI", tab: "music" },
+      { label: "Suno / Udio / MusicGen", tab: "music" },
+      { label: "sample packs", tab: "music" },
+      { label: "music industry AI", tab: "music" },
+      { label: "vinyl + tech", tab: "music" },
+      { label: "podcast production", tab: "music" },
+      { label: "voice cloning ethics", tab: "music" },
+    ],
+  },
+  {
     heading: "CITY MODE",
     color: "text-terminal",
     links: [
