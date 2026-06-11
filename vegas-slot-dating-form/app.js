@@ -1,5 +1,5 @@
 /* ================================================================
-   POLY JACKPOT — game logic
+   POLY SWIPE — game logic
    Flow: attract spin → swipeable question cards → lever pull → win
    ================================================================ */
 
@@ -497,7 +497,7 @@ async function submitApplication() {
   const payload = {
     ...state.answers,
     submittedAt: new Date().toISOString(),
-    source: 'poly-jackpot-form',
+    source: 'poly-swipe-form',
     userAgent: navigator.userAgent,
   };
 
@@ -603,8 +603,8 @@ $('#muteBtn').addEventListener('click', () => {
 });
 $('#againBtn').addEventListener('click', async () => {
   const shareData = {
-    title: 'POLY JACKPOT 🎰💘',
-    text: 'I just applied to play on POLY JACKPOT — the live poly dating game. Come hit it big in love:',
+    title: 'POLY SWIPE 🎰💘',
+    text: 'I just applied to be on POLY SWIPE — the live dating game show. One swipe could change everything:',
     url: location.href,
   };
   if (navigator.share) {

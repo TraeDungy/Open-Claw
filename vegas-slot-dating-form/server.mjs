@@ -1,4 +1,4 @@
-/* POLY JACKPOT — static server + submission collector
+/* POLY SWIPE — static server + submission collector
  *
  * Serves the form and appends guest applications to submissions.jsonl.
  * If AIRTABLE_API_KEY + AIRTABLE_BASE_ID + AIRTABLE_TABLE are set,
@@ -121,5 +121,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🎰 POLY JACKPOT form running at http://localhost:${PORT}`);
+  console.log(`🎰 POLY SWIPE form running at http://localhost:${PORT}`);
 });

@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0014" />
-<title>POLY JACKPOT — The Live Poly Dating Game</title>
-<meta name="description" content="Hit it big in love. Apply to be a guest on the live poly dating game." />
+<title>POLY SWIPE — Live Dating Game Show</title>
+<meta name="description" content="POLYWOOD presents POLY SWIPE, the live dating game show. One swipe could change everything — apply now to be on the show." />
 <link rel="preload" href="fonts/titan-one-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="styles.css" />
@@ -23,12 +23,14 @@
   <!-- ============ SCREEN 1 : ATTRACT MODE ============ -->
   <section id="screen-intro" class="screen active">
     <header class="intro-header">
-      <div class="neon-sub blink-slow">★ LIVE ★ TONIGHT ★ LIVE ★</div>
+      <div class="presents">P O L Y W O O D&nbsp;&nbsp;P R E S E N T S</div>
+      <div class="script-tag">One Swipe Could Change Everything.</div>
       <h1 class="title">
         <span class="title-line t1">POLY</span>
-        <span class="title-line t2">JACKPOT</span>
+        <span class="title-line t2">SWIPE</span>
       </h1>
-      <p class="tagline">The live poly dating game.<br/>Hit it big in love. 💘</p>
+      <div class="live-badge"><span class="live-word">LIVE</span> DATING GAME SHOW</div>
+      <p class="welcome-line">Couples · Throuples · Quads · Singles<br/><strong>WELCOME!</strong></p>
     </header>
 
     <div class="slot-machine" id="slotMachine">
@@ -45,7 +47,8 @@
       <span class="btn-shine"></span>
       PULL TO PLAY
     </button>
-    <p class="fine-print">Spin to start your application · 18+ only</p>
+    <p class="fine-print">Apply now to be on the show! · 18+ only</p>
+    <div class="ticker">DATE&nbsp;·&nbsp;CONNECT&nbsp;·&nbsp;MATCH&nbsp;·&nbsp;REPEAT</div>
   </section>
 
   <!-- ============ SCREEN 2 : CARD DECK FORM ============ -->
@@ -64,7 +67,8 @@
     <div class="deck-area">
       <div class="card-deck" id="cardDeck"></div>
       <div class="swipe-hint" id="swipeHint">
-        <span class="hint-arrow">→</span> swipe right to lock it in
+        <img class="hint-arrow-img" src="assets/swipe-right.svg" alt="" />
+        <span>swipe right to lock it in</span>
       </div>
     </div>
 
@@ -107,6 +111,7 @@
       <span class="btn-shine"></span>
       REFER A PLAYER 💌
     </button>
+    <div class="ticker">DATE&nbsp;·&nbsp;CONNECT&nbsp;·&nbsp;MATCH&nbsp;·&nbsp;REPEAT</div>
   </section>
 
   <!-- toast -->

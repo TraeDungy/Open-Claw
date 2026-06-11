@@ -1,12 +1,17 @@
-# 🎰💘 POLY JACKPOT — Vegas Slot Dating Form
+# 🎰💘 POLY SWIPE — Vegas Slot Dating Game Show Form
 
 Mobile-first guest application form for the live poly dating game. A mix of
 **Tinder swiping** and a **casino big-win slot machine** — built to make
 signing up feel like hitting a jackpot.
 
+**Brand:** POLYWOOD presents POLY SWIPE — "One Swipe Could Change Everything."
+Pink-chrome + gold-chrome 3D title, script taglines, neon swipe arrows, gold
+bokeh on black — all assets are self-hosted CSS/SVG/woff2 (see `assets/` and
+`fonts/`), matching the show flyer.
+
 ## The experience
 
-1. **Attract mode** — neon marquee with chasing bulbs, flickering "POLY JACKPOT"
+1. **Attract mode** — neon marquee with chasing bulbs, flickering chrome "POLY SWIPE"
    sign, and a real spinning 3-reel slot machine. Tap **PULL TO PLAY** → reels
    spin with blur + staggered stops and land on 💘💘💘 → screen shakes, coins
    rain, the form begins.
@@ -58,7 +63,7 @@ Set these env vars and every submission is also pushed to Airtable:
 ```bash
 AIRTABLE_API_KEY=...
 AIRTABLE_BASE_ID=...
-AIRTABLE_TABLE="Poly Jackpot Applicants"
+AIRTABLE_TABLE="Poly Swipe Applicants"
 ```
 
 Expected Airtable fields: `Name`, `Email`, `Age Range`, `City`,
@@ -69,7 +74,7 @@ Expected Airtable fields: `Name`, `Email`, `Age Range`, `City`,
 
 ```bash
 # on the VPS
-pm2 start server.mjs --name poly-jackpot --cwd /root/Open-Claw/vegas-slot-dating-form
+pm2 start server.mjs --name poly-swipe --cwd /root/Open-Claw/vegas-slot-dating-form
 pm2 save
 ```
 
