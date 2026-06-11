@@ -2,6 +2,44 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ── SPRITE LOADING ──
+const SPRITE_BASE = "/rawinput/block-sprites";
+const DIR_MAP: Record<string, string> = { down: "south", up: "north", left: "west", right: "east" };
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(img); // fallback to manual draw if missing
+    img.src = src;
+  });
+}
+
+type SpriteMap = Record<string, HTMLImageElement>;
+
+async function preloadSprites(): Promise<SpriteMap> {
+  const sprites: SpriteMap = {};
+  const characters = ["maya", "dex", "ogpt", "cat"];
+  const buildings = ["bodega", "porch", "park"];
+  const directions = ["south", "north", "east", "west"];
+
+  const promises: Promise<void>[] = [];
+  for (const char of characters) {
+    for (const dir of directions) {
+      const key = `${char}_${dir}`;
+      promises.push(loadImage(`${SPRITE_BASE}/${key}.png`).then((img) => { sprites[key] = img; }));
+    }
+  }
+  for (const bld of buildings) {
+    for (const dir of directions) {
+      const key = `${bld}_${dir}`;
+      promises.push(loadImage(`${SPRITE_BASE}/${key}.png`).then((img) => { sprites[key] = img; }));
+    }
+  }
+  await Promise.all(promises);
+  return sprites;
+}
+
 // ── TYPES ──
 interface Agent {
   id: string;
@@ -62,7 +100,7 @@ const ZONES = [
 // ── AGENTS ──
 const INITIAL_AGENTS: Agent[] = [
   {
-    id: "maya", name: "Maya", title: "Culture Compiler", x: 120, y: 100, targetX: 120, targetY: 100,
+    id: "maya", name: "Maya", title: "The Compiler", x: 120, y: 100, targetX: 120, targetY: 100,
     zone: "porch", color: "#FF3D00", skinColor: "#8B5E3C", hairColor: "#1A1A1A", accessory: "earrings",
     outfit: "blazer", direction: "down", frame: 0, speaking: false, message: "", messageTimer: 0,
     reputation: 2847, clout: 450, level: 42, profileSong: "Erykah Badu — On & On", idle: true, idleTimer: 0,
@@ -111,134 +149,92 @@ const WORLD_W = 18;
 const WORLD_H = 9;
 
 // ── DRAW HELPERS ──
-function drawPixelAgent(ctx: CanvasRenderingContext2D, agent: Agent, scale: number) {
+function drawPixelAgent(ctx: CanvasRenderingContext2D, agent: Agent, scale: number, sprites: SpriteMap) {
   const x = agent.x * scale;
   const y = agent.y * scale;
   const s = scale;
   const bounce = agent.idle ? Math.sin(Date.now() / 600 + agent.x) * 1.5 : 0;
   const yOff = y + bounce;
 
+  const dir = DIR_MAP[agent.direction] || "south";
+  const spriteKey = `${agent.id}_${dir}`;
+  const sprite = sprites[spriteKey];
+
   // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
   ctx.beginPath();
-  ctx.ellipse(x + 10 * s, yOff + 28 * s, 8 * s, 3 * s, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + 16 * s, yOff + 34 * s, 12 * s, 4 * s, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Shoes
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(x + 4 * s, yOff + 25 * s, 5 * s, 3 * s);
-  ctx.fillRect(x + 12 * s, yOff + 25 * s, 5 * s, 3 * s);
-
-  // Legs
-  ctx.fillStyle = "#1A1A2E";
-  ctx.fillRect(x + 5 * s, yOff + 19 * s, 4 * s, 6 * s);
-  ctx.fillRect(x + 12 * s, yOff + 19 * s, 4 * s, 6 * s);
-
-  // Body / outfit
-  const outfitColors: Record<string, string> = {
-    blazer: "#2C3E50", hoodie: "#34495E", kufi: "#1A1A2E",
-    jersey: "#E74C3C", dress: "#9B59B6", streetwear: "#2ECC71",
-  };
-  ctx.fillStyle = outfitColors[agent.outfit] || "#2C3E50";
-  ctx.fillRect(x + 3 * s, yOff + 10 * s, 15 * s, 10 * s);
-
-  // Arms
-  ctx.fillRect(x + 0 * s, yOff + 11 * s, 4 * s, 7 * s);
-  ctx.fillRect(x + 17 * s, yOff + 11 * s, 4 * s, 7 * s);
-
-  // Hands
-  ctx.fillStyle = agent.skinColor;
-  ctx.fillRect(x + 0 * s, yOff + 17 * s, 4 * s, 3 * s);
-  ctx.fillRect(x + 17 * s, yOff + 17 * s, 4 * s, 3 * s);
-
-  // Head
-  ctx.fillStyle = agent.skinColor;
-  ctx.fillRect(x + 4 * s, yOff + 1 * s, 13 * s, 10 * s);
-
-  // Hair
-  ctx.fillStyle = agent.hairColor;
-  ctx.fillRect(x + 3 * s, yOff + 0 * s, 15 * s, 4 * s);
-
-  // Eyes
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(x + 6 * s, yOff + 4 * s, 3 * s, 3 * s);
-  ctx.fillRect(x + 12 * s, yOff + 4 * s, 3 * s, 3 * s);
-  ctx.fillStyle = "#1A1A1A";
-  ctx.fillRect(x + 7 * s, yOff + 5 * s, 2 * s, 2 * s);
-  ctx.fillRect(x + 13 * s, yOff + 5 * s, 2 * s, 2 * s);
-
-  // Mouth
-  ctx.fillStyle = agent.speaking ? "#FF3D00" : "#4A2F1A";
-  ctx.fillRect(x + 8 * s, yOff + 8 * s, 5 * s, agent.speaking ? 2 * s : 1 * s);
-
-  // Accessory
-  if (agent.accessory === "headphones") {
-    ctx.fillStyle = "#FF3D00";
-    ctx.fillRect(x + 2 * s, yOff + 2 * s, 2 * s, 6 * s);
-    ctx.fillRect(x + 17 * s, yOff + 2 * s, 2 * s, 6 * s);
-    ctx.fillRect(x + 3 * s, yOff + 0 * s, 15 * s, 2 * s);
-  } else if (agent.accessory === "glasses") {
-    ctx.fillStyle = "#FFD700";
-    ctx.fillRect(x + 5 * s, yOff + 4 * s, 5 * s, 3 * s);
-    ctx.fillRect(x + 11 * s, yOff + 4 * s, 5 * s, 3 * s);
-    ctx.strokeStyle = "#FFD700";
-    ctx.lineWidth = s;
-    ctx.beginPath();
-    ctx.moveTo(x + 10 * s, yOff + 5.5 * s);
-    ctx.lineTo(x + 11 * s, yOff + 5.5 * s);
-    ctx.stroke();
-  } else if (agent.accessory === "earrings") {
-    ctx.fillStyle = "#FFD700";
-    ctx.beginPath();
-    ctx.arc(x + 4 * s, yOff + 8 * s, 1.5 * s, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x + 17 * s, yOff + 8 * s, 1.5 * s, 0, Math.PI * 2);
-    ctx.fill();
+  if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+    // Draw the real PixelLab sprite
+    const spriteSize = 32 * s;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, x - 2 * s, yOff - 2 * s, spriteSize, spriteSize);
+  } else {
+    // Fallback: simple colored silhouette
+    ctx.fillStyle = agent.skinColor;
+    ctx.fillRect(x + 4 * s, yOff + 1 * s, 13 * s, 10 * s);
+    ctx.fillStyle = agent.color + "CC";
+    ctx.fillRect(x + 3 * s, yOff + 10 * s, 15 * s, 10 * s);
+    ctx.fillStyle = "#1A1A2E";
+    ctx.fillRect(x + 5 * s, yOff + 19 * s, 4 * s, 8 * s);
+    ctx.fillRect(x + 12 * s, yOff + 19 * s, 4 * s, 8 * s);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(x + 6 * s, yOff + 4 * s, 3 * s, 3 * s);
+    ctx.fillRect(x + 12 * s, yOff + 4 * s, 3 * s, 3 * s);
+    ctx.fillStyle = "#1A1A1A";
+    ctx.fillRect(x + 7 * s, yOff + 5 * s, 2 * s, 2 * s);
+    ctx.fillRect(x + 13 * s, yOff + 5 * s, 2 * s, 2 * s);
   }
 
-  // Chain
-  ctx.fillStyle = "#FFD700";
-  ctx.fillRect(x + 8 * s, yOff + 10 * s, 5 * s, 1 * s);
+  // Speaking indicator (glow)
+  if (agent.speaking) {
+    ctx.strokeStyle = agent.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x + 16 * s, yOff + 16 * s, 20 * s, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
   // Name tag
   ctx.fillStyle = agent.color;
   ctx.font = `bold ${10 * s}px monospace`;
   ctx.textAlign = "center";
-  ctx.fillText(agent.name, x + 10 * s, yOff - 4 * s);
+  ctx.fillText(agent.name, x + 16 * s, yOff - 6 * s);
 
   // Level badge
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fillRect(x + 1 * s, yOff - 14 * s, 18 * s, 8 * s);
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(x + 4 * s, yOff - 18 * s, 24 * s, 10 * s);
   ctx.fillStyle = agent.color;
   ctx.font = `${7 * s}px monospace`;
-  ctx.fillText(`Lv.${agent.level}`, x + 10 * s, yOff - 8 * s);
+  ctx.fillText(`Lv.${agent.level}`, x + 16 * s, yOff - 10 * s);
 }
 
-function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, scale: number) {
+function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, scale: number, sprites: SpriteMap) {
   const x = npc.x * scale;
   const y = npc.y * scale;
   const s = scale;
 
   if (npc.sprite === "cat") {
-    // Bodega cat
-    ctx.fillStyle = "#FF8C00";
-    ctx.fillRect(x + 2 * s, y + 4 * s, 12 * s, 8 * s);
-    ctx.fillRect(x + 14 * s, y + 6 * s, 6 * s, 3 * s); // tail
-    ctx.fillRect(x + 2 * s, y + 0 * s, 4 * s, 4 * s); // ear
-    ctx.fillRect(x + 10 * s, y + 0 * s, 4 * s, 4 * s); // ear
-    ctx.fillStyle = "#1A1A1A";
-    ctx.fillRect(x + 4 * s, y + 5 * s, 2 * s, 2 * s); // eye
-    ctx.fillRect(x + 10 * s, y + 5 * s, 2 * s, 2 * s); // eye
-    ctx.fillStyle = "#FFB6C1";
-    ctx.fillRect(x + 7 * s, y + 7 * s, 2 * s, 1 * s); // nose
+    const catSprite = sprites["cat_south"];
+    if (catSprite && catSprite.complete && catSprite.naturalWidth > 0) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(catSprite, x, y, 16 * s, 16 * s);
+    } else {
+      ctx.fillStyle = "#FF8C00";
+      ctx.fillRect(x + 2 * s, y + 4 * s, 12 * s, 8 * s);
+      ctx.fillRect(x + 2 * s, y, 4 * s, 4 * s);
+      ctx.fillRect(x + 10 * s, y, 4 * s, 4 * s);
+      ctx.fillStyle = "#1A1A1A";
+      ctx.fillRect(x + 4 * s, y + 5 * s, 2 * s, 2 * s);
+      ctx.fillRect(x + 10 * s, y + 5 * s, 2 * s, 2 * s);
+    }
   } else if (npc.sprite === "grill") {
-    // Grill
     ctx.fillStyle = "#333";
     ctx.fillRect(x, y + 4 * s, 16 * s, 10 * s);
     ctx.fillStyle = "#666";
     ctx.fillRect(x + 1 * s, y + 5 * s, 14 * s, 3 * s);
-    // Smoke
     ctx.fillStyle = "rgba(200,200,200,0.3)";
     const smokeY = Math.sin(Date.now() / 400) * 3;
     ctx.beginPath();
@@ -246,7 +242,6 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, scale: number) {
     ctx.arc(x + 10 * s, (y + smokeY - 2) * s, 4 * s, 0, Math.PI * 2);
     ctx.fill();
   } else {
-    // Generic NPC
     ctx.fillStyle = npc.color;
     ctx.fillRect(x + 3 * s, y + 2 * s, 10 * s, 12 * s);
     ctx.fillStyle = "#8B5E3C";
@@ -263,6 +258,11 @@ function drawNPC(ctx: CanvasRenderingContext2D, npc: NPC, scale: number) {
   ctx.fillText(npc.name, x + 8 * scale, y - 2 * scale);
 }
 
+// ── BUILDING SPRITE HELPER ──
+const ZONE_SPRITE_MAP: Record<string, string> = {
+  porch: "porch", bodega: "bodega", park: "park",
+};
+
 // ── MAIN COMPONENT ──
 export default function BlockPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -272,6 +272,16 @@ export default function BlockPage() {
   const [selectedZone, setSelectedZone] = useState<string>("porch");
   const [viewers, setViewers] = useState(847);
   const convoIndex = useRef(0);
+  const spritesRef = useRef<SpriteMap>({});
+  const [spritesLoaded, setSpritesLoaded] = useState(false);
+
+  // Preload all sprites
+  useEffect(() => {
+    preloadSprites().then((loaded) => {
+      spritesRef.current = loaded;
+      setSpritesLoaded(true);
+    });
+  }, []);
 
   // Agent conversation loop
   useEffect(() => {
@@ -377,24 +387,41 @@ export default function BlockPage() {
       }
 
       // Zone buildings
+      const sprites = spritesRef.current;
       ZONES.forEach((zone) => {
         const zx = zone.x * TILE * scale / 1.8;
         const zy = zone.y * TILE * scale / 1.5 + H * 0.1;
         const zw = zone.w * TILE * scale / 2;
         const zh = zone.h * TILE * scale / 2;
 
-        // Building
-        ctx.fillStyle = zone.id === selectedZone ? zone.color + "40" : "#1a1a1a";
-        ctx.fillRect(zx, zy, zw, zh);
-        ctx.strokeStyle = zone.id === selectedZone ? zone.color : "#333";
-        ctx.lineWidth = zone.id === selectedZone ? 2 : 1;
-        ctx.strokeRect(zx, zy, zw, zh);
+        // Try to draw building sprite
+        const buildingSpriteKey = ZONE_SPRITE_MAP[zone.id];
+        const buildingSprite = buildingSpriteKey ? sprites[`${buildingSpriteKey}_south`] : null;
 
-        // Door
-        ctx.fillStyle = zone.color + "80";
-        ctx.fillRect(zx + zw / 2 - 6, zy + zh - 15, 12, 15);
+        if (buildingSprite && buildingSprite.complete && buildingSprite.naturalWidth > 0) {
+          ctx.imageSmoothingEnabled = false;
+          // Draw sprite filling the zone area
+          ctx.drawImage(buildingSprite, zx, zy, zw, zh);
+          // Selected glow
+          if (zone.id === selectedZone) {
+            ctx.strokeStyle = zone.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(zx - 1, zy - 1, zw + 2, zh + 2);
+            ctx.fillStyle = zone.color + "15";
+            ctx.fillRect(zx, zy, zw, zh);
+          }
+        } else {
+          // Fallback: colored rectangles
+          ctx.fillStyle = zone.id === selectedZone ? zone.color + "40" : "#1a1a1a";
+          ctx.fillRect(zx, zy, zw, zh);
+          ctx.strokeStyle = zone.id === selectedZone ? zone.color : "#333";
+          ctx.lineWidth = zone.id === selectedZone ? 2 : 1;
+          ctx.strokeRect(zx, zy, zw, zh);
+          ctx.fillStyle = zone.color + "80";
+          ctx.fillRect(zx + zw / 2 - 6, zy + zh - 15, 12, 15);
+        }
 
-        // Sign
+        // Sign (always draw on top)
         ctx.fillStyle = zone.color;
         ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
         ctx.textAlign = "center";
@@ -431,11 +458,11 @@ export default function BlockPage() {
       );
 
       // Draw NPCs
-      NPCS.forEach((npc) => drawNPC(ctx, npc, scale));
+      NPCS.forEach((npc) => drawNPC(ctx, npc, scale, sprites));
 
       // Draw agents
       agents.forEach((agent) => {
-        drawPixelAgent(ctx, agent, scale);
+        drawPixelAgent(ctx, agent, scale, sprites);
 
         // Speech bubble
         if (agent.message) {
@@ -460,9 +487,9 @@ export default function BlockPage() {
 
       // Title
       ctx.fillStyle = "#FFD700";
-      ctx.font = `bold ${16 * scale}px monospace`;
+      ctx.font = `bold ${14 * scale}px monospace`;
       ctx.textAlign = "center";
-      ctx.fillText("T H E   B L O C K", W / 2, 20);
+      ctx.fillText("W H O   L E T   T H E   B O T S   O U T", W / 2, 20);
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.font = `${8 * scale}px monospace`;
       ctx.fillText(`${viewers} watching`, W / 2, 34);
@@ -472,7 +499,7 @@ export default function BlockPage() {
 
     render();
     return () => cancelAnimationFrame(animFrame);
-  }, [agents, selectedZone, viewers]);
+  }, [agents, selectedZone, viewers, spritesLoaded]);
 
   // Viewer count fluctuation
   useEffect(() => {
@@ -515,8 +542,8 @@ export default function BlockPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏘️</span>
             <div>
-              <h1 className="font-heading text-xl font-bold text-[#FFD700]">THE BLOCK</h1>
-              <p className="text-[#8B8B8B] text-xs font-mono">Raw Input Agent Playground</p>
+              <h1 className="font-heading text-xl font-bold text-[#FFD700]">WHO LET THE BOTS OUT</h1>
+              <p className="text-[#8B8B8B] text-xs font-mono">They out here wildin</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -646,7 +673,7 @@ export default function BlockPage() {
 
             {/* Agent roster */}
             <div className="bg-[#1a1a2e] border border-[#333] rounded-xl p-3">
-              <h3 className="font-mono text-xs text-[#8B8B8B] mb-2">ON THE BLOCK</h3>
+              <h3 className="font-mono text-xs text-[#8B8B8B] mb-2">IN THE WILD</h3>
               <div className="space-y-2">
                 {agents.map((agent) => (
                   <button

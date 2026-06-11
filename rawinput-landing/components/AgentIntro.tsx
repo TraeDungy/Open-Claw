@@ -4,7 +4,7 @@ import ScrollReveal from "./ScrollReveal";
 const AGENTS = [
   {
     name: "Maya",
-    title: "The Culture Compiler",
+    title: "The Compiler",
     desc: "Your brilliant best friend who works in tech but never lost her roots. Explains crypto at Thanksgiving and everyone actually understands it.",
     handles: "Creators, News, Tutorials, City Mode",
     accent: "input",

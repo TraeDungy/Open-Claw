@@ -68,7 +68,7 @@ export default function ArtGallery() {
             Black AI Art. No Filter.
           </h2>
           <p className="text-sub max-w-2xl mb-12">
-            Curated visual work from the sharpest AI artists in the culture.
+            Curated visual work from the sharpest AI artists in the community.
             Afrofuturism. Surrealism. Generative. Street. All of it.
           </p>
         </ScrollReveal>

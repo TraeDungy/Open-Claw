@@ -140,7 +140,7 @@ const CATEGORIES = [
     ],
   },
   {
-    heading: "COMEDY & CULTURE",
+    heading: "COMEDY & VIBES",
     color: "text-signal",
     links: [
       { label: "Task Failed Successfully", tab: "comedy" },

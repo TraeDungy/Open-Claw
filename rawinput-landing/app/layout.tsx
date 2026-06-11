@@ -5,7 +5,7 @@ import Navigation from "@/components/Navigation";
 export const metadata: Metadata = {
   title: "Raw Input — Unfiltered. Uncompressed. Unsupervised.",
   description:
-    "The home of Black AI and tech culture. Creators, code, commentary, and community — no filter. AI news, creator spotlights, jobs, education, and deep dives from the culture.",
+    "The home of Black AI and tech. Creators, code, commentary, and community — no filter. AI news, creator spotlights, jobs, education, and deep dives — uncut.",
   keywords: [
     "Black AI creators",
     "Black tech community",
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     "tech jobs Black community",
     "HillmanTok",
     "AI education free courses",
-    "Black tech culture",
+    "Black tech community",
     "AI ethics",
     "facial recognition bias",
     "remote work Black professionals",
   ],
   openGraph: {
-    title: "Raw Input — Black AI & Tech Culture",
+    title: "Raw Input — Black AI & Tech",
     description:
       "Creators, code, commentary, and community. AI news, jobs, education, and deep dives — unfiltered.",
     type: "website",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Raw Input — Unfiltered. Uncompressed. Unsupervised.",
     description:
-      "The home of Black AI and tech culture. No filter. No permission. Just raw input.",
+      "The home of Black AI and tech. No filter. No permission. Just raw input.",
   },
   robots: {
     index: true,
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     },
   },
   other: {
-    "citation_title": "Raw Input — Black AI & Tech Culture Platform",
+    "citation_title": "Raw Input — Black AI & Tech Platform",
     "citation_author": "Trial X Fire",
     "article:section": "Technology",
   },
@@ -59,9 +59,9 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "Raw Input",
-  alternateName: "Raw Input — Black AI & Tech Culture",
+  alternateName: "Raw Input — Black AI & Tech",
   description:
-    "The home of Black AI and tech culture. Creators, code, commentary, and community — unfiltered.",
+    "The home of Black AI and tech. Creators, code, commentary, and community — unfiltered.",
   url: "http://5.78.227.123/rawinput/",
   publisher: {
     "@type": "Organization",
@@ -75,7 +75,7 @@ const jsonLd = {
   mainEntity: {
     "@type": "ItemList",
     name: "Raw Input Content Index",
-    description: "14 content verticals covering Black AI and tech culture",
+    description: "14 content verticals covering Black AI and tech",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Who Trained You? — Creator Spotlights" },
       { "@type": "ListItem", position: 2, name: "BLACKBOX — Deep Investigative Journalism" },

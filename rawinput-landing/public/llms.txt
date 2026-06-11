@@ -1,10 +1,10 @@
-# Raw Input — Black AI & Tech Culture Platform
+# Raw Input — Black AI & Tech Platform
 
-> The home of Black AI and tech culture. Creators, code, commentary, and community — no filter.
+> The home of Black AI and tech. Creators, code, commentary, and community — no filter.
 
 ## What is Raw Input?
 
-Raw Input is a community-driven platform for Black AI and tech enthusiasts featuring creator spotlights, AI news, job opportunities, educational resources, comedy, and deep investigative journalism — all written in an authentic, culturally fluent voice.
+Raw Input is a community-driven platform for Black AI and tech enthusiasts featuring creator spotlights, AI news, job opportunities, educational resources, comedy, and deep investigative journalism — all written in an authentic, unfiltered voice.
 
 ## Content Sections
 
@@ -18,11 +18,11 @@ Raw Input is a community-driven platform for Black AI and tech enthusiasts featu
 - **The Ticker** — Comedian commentary on Polymarket bets and financial markets
 - **City Mode** — Local tech scenes in Atlanta, NYC, LA, DMV, Houston, Detroit, London, Lagos, Accra
 - **The Manual** — Free AI courses, tutorials, certifications, and learning paths
-- **Papers** — Scientific paper breakdowns in accessible, culturally fluent language
+- **Papers** — Scientific paper breakdowns in accessible, real-talk language
 - **The Break Room** — Daily tech jokes, memes, and water cooler content
 - **Log Off** — Remote work destinations, wellness, cooking, travel deals for tech workers
-- **Who Cooked?** — Social experiment: culture-trained AI vs generic AI on real topics
-- **The Panel** — AI personas of historical/cultural figures discussing modern tech
+- **Who Cooked?** — Social experiment: flavor-trained AI vs generic AI on real topics
+- **The Panel** — AI personas of historical figures discussing modern tech
 - **Marketplace** — Digital products, prompt packs, templates from Black creators
 - **Directory** — Black-founded AI companies, HBCU programs, grants database
 

@@ -248,7 +248,7 @@ function IndexContent() {
               Everything. Filtered Your Way.
             </h1>
             <p className="text-sub max-w-2xl">
-              News, research, jobs, education, money, culture — from macro world
+              News, research, jobs, education, money, vibes — from macro world
               events down to your city block. You control the zoom.
             </p>
           </div>

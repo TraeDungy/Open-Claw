@@ -41,6 +41,7 @@ const REPOS: Repo[] = [
   { tab: "trending", name: "browser-use/browser-use", desc: "AI agents that control web browsers. Automate anything with natural language.", stars: "25K+", tag: "agents", url: "https://github.com/browser-use/browser-use" },
   { tab: "trending", name: "crewAI-inc/crewAI", desc: "Multi-agent orchestration. Agents with roles, goals, and backstories.", stars: "28K+", tag: "agents", url: "https://github.com/crewAI-inc/crewAI" },
   { tab: "trending", name: "Significant-Gravitas/AutoGPT", desc: "The original autonomous AI agent. Task decomposition, web browsing, code execution.", stars: "172K+", tag: "agents", url: "https://github.com/Significant-Gravitas/AutoGPT" },
+  { tab: "trending", name: "RentAHuman", desc: "The reverse gig economy. AI agents hire humans for physical-world tasks they can't do themselves. Wild concept, actually works.", tag: "agents", url: "https://rentahuman.io" },
 
   // ── FREE ALTERNATIVES ──
   { tab: "free-alt", name: "open-webui/open-webui", desc: "Self-hosted ChatGPT alternative. Beautiful UI, local models, no subscription.", stars: "60K+", tag: "chat", url: "https://github.com/open-webui/open-webui", replaces: "ChatGPT Plus ($20/mo)" },

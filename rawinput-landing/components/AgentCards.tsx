@@ -6,10 +6,10 @@ import ScrollReveal from "./ScrollReveal";
 const BOT_PRODUCTS = [
   {
     name: "Maya-Class Agent",
-    type: "Culture-Aware Content Agent",
+    type: "Flavor-Tuned Content Agent",
     summary: "Warm, sharp, culturally fluent content creation and community management.",
     functions: [
-      "Content curation with cultural context",
+      "Content curation with real context",
       "Creator profiling and outreach",
       "Tutorial and educational content",
       "Community management",
@@ -177,11 +177,11 @@ export default function AgentCards() {
             // license the agents
           </span>
           <h2 className="text-headline text-raw mb-2">
-            Agents for Sale. Culture Included.
+            Agents for Sale. Sauce Included.
           </h2>
           <p className="text-sub max-w-2xl mb-12">
             Every agent powering Raw Input is built on open-source models and
-            free infrastructure. They&apos;re battle-tested, culturally fluent,
+            free infrastructure. They&apos;re battle-tested, fluent,
             and ready to work for your business.
           </p>
         </ScrollReveal>
@@ -353,7 +353,7 @@ export default function AgentCards() {
             <p className="text-chrome mb-6">
               Need an agent that doesn&apos;t exist yet? We build custom AI
               agents on open-source models with zero recurring AI costs.
-              Culture-aware or industry-specific — your call.
+              Flavor-tuned or industry-specific — your call.
             </p>
             <a
               href="#"

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 const TIMELINE = [
   {
     phase: "The Spark",
-    desc: "One person. One VPS. A vision to build autonomous AI infrastructure that serves the culture — not the other way around.",
+    desc: "One person. One VPS. A vision to build autonomous AI infrastructure that serves the community — not the other way around.",
   },
   {
     phase: "The Infrastructure",
@@ -14,7 +14,7 @@ const TIMELINE = [
   },
   {
     phase: "The Voices",
-    desc: "Created Maya, Dex, and OG-PT — three AI editorial agents with distinct personalities, comedy DNA, and cultural fluency. Not generic. Not corporate. Ours.",
+    desc: "Created Maya, Dex, and OG-PT — three AI editorial agents with distinct personalities, comedy DNA, and real flavor. Not generic. Not corporate. Ours.",
   },
   {
     phase: "The Platform",
@@ -22,7 +22,7 @@ const TIMELINE = [
   },
   {
     phase: "The Movement",
-    desc: "City chapters. Events. A creator network. An art gallery. A job board. A comedy column. A newsletter. A prediction market commentary show. All autonomous. All culture-first.",
+    desc: "City chapters. Events. A creator network. An art gallery. A job board. A comedy column. A newsletter. A prediction market commentary show. All autonomous. All community-first.",
   },
 ];
 
@@ -86,7 +86,7 @@ export default function AboutPage() {
                   <p>
                     I&apos;m not a venture-backed founder. I&apos;m not from
                     Stanford. I didn&apos;t raise a seed round. I&apos;m a
-                    creative technologist who got tired of watching Black culture
+                    creative technologist who got tired of watching Black creativity
                     get scraped, processed, and monetized by platforms that
                     don&apos;t look like us, don&apos;t sound like us, and
                     definitely don&apos;t laugh at the same jokes.
@@ -102,11 +102,11 @@ export default function AboutPage() {
                     Raw Input is the front door to that infrastructure. A
                     platform where Black AI creators get featured, not scraped.
                     Where the commentary sounds like a cookout, not a corporate
-                    memo. Where the jokes hit because they come from culture, not
+                    memo. Where the jokes hit because they come from the cookout, not
                     a committee.
                   </p>
                   <p className="text-raw font-medium">
-                    The goal is simple: build an autonomous cultural archive that
+                    The goal is simple: build an autonomous living archive that
                     the community owns, the community shapes, and the community
                     benefits from. Not a startup. A movement.
                   </p>

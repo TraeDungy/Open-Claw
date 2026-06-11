@@ -124,7 +124,7 @@ export default function VersusPreview() {
           <h2 className="text-headline text-raw mb-2">Who Cooked?</h2>
           <p className="text-sub max-w-2xl mb-8">
             Same question. Two bots. Wildly different answers. The vanilla bot
-            goes first — then see what happens when AI actually has culture.
+            goes first — then see what happens when AI actually has flavor.
           </p>
         </ScrollReveal>
 
