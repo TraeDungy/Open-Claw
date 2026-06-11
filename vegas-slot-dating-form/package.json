@@ -1,0 +1,12 @@
+{
+  "name": "vegas-slot-dating-form",
+  "version": "1.0.0",
+  "description": "POLY JACKPOT — mobile-first Vegas slot machine × Tinder swipe guest application form for the live poly dating game",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
