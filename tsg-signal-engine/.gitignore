@@ -1,0 +1,5 @@
+.env
+ecosystem.config.cjs
+state.json
+banners/
+node_modules/

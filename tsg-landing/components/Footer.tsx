@@ -20,17 +20,21 @@ export default function Footer() {
         <div>
           <p className="text-[10px] font-semibold tracking-[0.2em] text-bone/40">QUICK LINKS</p>
           <ul className="mt-3 space-y-2 text-sm text-bone/50">
-            <li><a href="#" className="transition hover:text-bone">Home</a></li>
-            <li><a href="#sessions" className="transition hover:text-bone">Sessions</a></li>
-            <li><a href="/tool" className="transition hover:text-bone">Signal Tool</a></li>
-            <li><a href="#field-guide" className="transition hover:text-bone">Field Guide</a></li>
+            <li><a href="/tsg" className="transition hover:text-bone">Home</a></li>
+            <li><a href="/tsg#sessions" className="transition hover:text-bone">Sessions</a></li>
+            <li><a href="/tsg/tool" className="transition hover:text-bone">Signal Tool</a></li>
+            <li><a href="/tsg#field-guide" className="transition hover:text-bone">Field Guide</a></li>
           </ul>
         </div>
 
-        {/* Follow */}
+        {/* Contact + Follow */}
         <div>
-          <p className="text-[10px] font-semibold tracking-[0.2em] text-bone/40">FOLLOW</p>
+          <p className="text-[10px] font-semibold tracking-[0.2em] text-bone/40">CONNECT</p>
           <ul className="mt-3 space-y-2 text-sm text-bone/50">
+            <li><a href="/tsg/submit" className="transition hover:text-bone">Contact Us</a></li>
+            <li className="mt-1"><a href="/tsg/submit?tab=submit" className="transition hover:text-pulse text-pulse/40 text-xs tracking-wider">Film Submissions &rarr;</a></li>
+          </ul>
+          <ul className="mt-4 space-y-2 text-sm text-bone/50">
             <li><a href="#" className="transition hover:text-bone">Instagram</a></li>
             <li><a href="#" className="transition hover:text-bone">YouTube</a></li>
             <li><a href="#" className="transition hover:text-bone">X (Twitter)</a></li>

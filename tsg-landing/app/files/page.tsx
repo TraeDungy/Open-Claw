@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import ParticleField from "@/components/ParticleField";
 import Footer from "@/components/Footer";
 
-type Tab = "declassified" | "studies" | "individuals" | "schools" | "timeline" | "media";
+type Tab = "declassified" | "disclosure" | "studies" | "individuals" | "schools" | "timeline" | "media";
 
 /* ────────────────────────────────────────────────────────────
    DATA — Declassified Government Files
@@ -92,6 +93,126 @@ const declassified = [
       { label: "NSA Parapsychology Report (via Black Vault)", url: "https://www.theblackvault.com/documentarchive/nsa-and-parapsychology/" },
     ],
     details: "The document reveals the NSA took psychic phenomena seriously enough to commission internal analysis of its potential impact on classified communications security.",
+  },
+];
+
+/* ────────────────────────────────────────────────────────────
+   DATA — UAP Disclosure (PURSUE Program & Related)
+   ──────────────────────────────────────────────────────────── */
+const disclosure = [
+  {
+    title: "PURSUE Program — Initial File Release (162 Files)",
+    agency: "Department of War (DoD) — Multi-Agency",
+    year: "May 8, 2026",
+    classification: "VARIOUS → DECLASSIFIED",
+    summary: "The largest coordinated UAP file release in U.S. history. 120 PDFs, 28 videos, and 14 images released under the Presidential Unsealing and Reporting System for UAP Encounters. Files sourced from FBI, DoD, NASA, State Department, ODNI, DOE, and AARO. 108 of 162 files are partially redacted.",
+    documents: [
+      { label: "PURSUE Portal — war.gov/UFO (Full Archive)", url: "https://www.war.gov/UFO/" },
+      { label: "DoD Press Release — Historic Transparency Act", url: "https://www.war.gov/News/Releases/Release/Article/4480582/" },
+    ],
+    details: "President Trump directed all federal agencies to find, review, declassify, and publicly release unresolved UAP-related records. Contributing agencies include the FBI, Department of War, NASA, State Department, ODNI, Department of Energy, and AARO. Additional tranches will be posted every few weeks on a rolling basis. The Pentagon stated none of their reviews found evidence concluding UAPs are extraterrestrial — and encouraged the public to 'make up their own minds.'",
+  },
+  {
+    title: "PURSUE Program — Second Release (222 Files)",
+    agency: "Department of War (DoD) — Multi-Agency",
+    year: "May 22, 2026",
+    classification: "VARIOUS → DECLASSIFIED",
+    summary: "The second PURSUE tranche — 222 new files including 51 videos, 7 audio recordings, and over 160 documents. Contains the first-ever released footage of a U.S. military engaging a UAP: F-16 cockpit infrared video of the Lake Huron shootdown (Feb 12, 2023). Also includes submarine transmedium footage showing spherical objects entering and exiting water, four UAPs in formation near Iran (2022), and Apollo 12 'green fireballs.'",
+    documents: [
+      { label: "PURSUE Portal — war.gov/UFO (Full Archive)", url: "https://www.war.gov/UFO/" },
+      { label: "DoD Press Release — Second Release", url: "https://www.war.gov/News/Releases/Release/Article/4499305/" },
+      { label: "Lake Huron F-16 Shootdown Footage Analysis", url: "https://theaviationist.com/2026/05/23/image-of-object-shot-down-over-lake-huron/" },
+      { label: "The War Zone — Lake Huron Object Analysis", url: "https://www.twz.com/air/we-finally-see-the-mysterious-object-shot-down-by-f-16s-over-lake-huron" },
+    ],
+    details: "The centerpiece of Release 02 is a 46-second infrared cockpit recording from a Wisconsin Air National Guard F-16C (148th Fighter Wing, Duluth, MN) that fired a single AIM-9X Sidewinder missile at an unidentified object tracked at 20,000 feet over Lake Huron on February 12, 2023. Pilots described the object as having an 'octagonal shape with strings attached' — the released footage suggests it may have been a balloon, though the Pentagon has not made a final determination. Additional highlights include submarine-captured video of spherical objects repeatedly entering and exiting the water (transmedium behavior), four UAPs captured in formation near Iran via U.S. military infrared systems (2022), 'green fireballs' or 'green orbs' during the Apollo 12 mission, reports of glowing orbs splitting at high speed, and an intelligence officer's account of orbs 'chasing' fighter jets. The 51 audio recordings include civilian and military witness testimonies. Rep. Tim Burchett, who pushed for the videos' release, described the contents as a 'Holy Crap moment.' The Pentagon described all materials as 'unresolved cases, meaning the government is unable to make a definitive determination on the nature of the observed phenomena.'",
+  },
+  {
+    title: "Apollo Mission Anomalies — NASA Photographs",
+    agency: "National Aeronautics and Space Administration",
+    year: "1965–1972 (Released 2026 via PURSUE)",
+    classification: "UNCLASSIFIED → RELEASED",
+    summary: "NASA photographs from Apollo 12 and Apollo 17 showing three dots in a triangular formation. Pentagon states 'there is no consensus about the nature of the anomaly' but preliminary analysis indicated it could be a 'physical object.' Gemini 7 transcripts include astronaut Frank Borman reporting a 'bogey' and a debris field of 'very, very many — hundreds of little particles.'",
+    documents: [
+      { label: "PURSUE Portal — NASA Files", url: "https://www.war.gov/UFO/" },
+      { label: "NASA UAP Independent Study Report (2023)", url: "https://science.nasa.gov/wp-content/uploads/2023/09/uap-independent-study-team-final-report.pdf" },
+    ],
+    details: "Apollo 11: Buzz Aldrin observed a 'fairly bright light source' while aboard. Apollo 12: Photographs contain a triangular formation of anomalous dots. Apollo 17 (1972): Similar triangular pattern captured on film. Gemini 7 (1965): Astronaut Frank Borman reported a 'bogey' alongside a debris field of 'hundreds of little particles' — the transcript was preserved but never publicly addressed until the PURSUE release.",
+  },
+  {
+    title: "Orb Encounters — Federal Law Enforcement Reports",
+    agency: "Multiple Federal Agencies",
+    year: "2023 (Released 2026)",
+    classification: "LAW ENFORCEMENT SENSITIVE → RELEASED",
+    summary: "Federal law enforcement officers independently reported 'orbs launching other orbs' across multiple locations in 2023. The Pentagon calls these 'among the most compelling' reports it holds. Reports came from trained observers with no prior UAP reporting history.",
+    documents: [
+      { label: "PURSUE Portal — Orb Reports", url: "https://www.war.gov/UFO/" },
+    ],
+    details: "Multiple federal law enforcement officers — trained observers with no history of UAP reports — independently described witnessing luminous orbs that appeared to launch secondary orbs from their surface. The Pentagon flagged these reports as 'among the most compelling' in their holdings. The independent corroboration across agencies and locations, combined with the observers' professional credentials, elevated these reports above typical sighting claims.",
+  },
+  {
+    title: "Military Theater Encounters — Iraq & Syria",
+    agency: "Department of War — CENTCOM",
+    year: "2022–2024 (Released 2026)",
+    classification: "SECRET → DECLASSIFIED",
+    summary: "Internal military reports describing 'one possible small UAP' in Iraq (2022) and 'multiple glares or light from an unknown origin' in Syria (2024). Infrared stills captured over the western United States between September and December 2025.",
+    documents: [
+      { label: "PURSUE Portal — Military Reports", url: "https://www.war.gov/UFO/" },
+    ],
+    details: "These reports emerged from active combat theater operations where aircrews and ground forces documented anomalous encounters during routine missions. The Iraq report (2022) describes a small UAP observed during a surveillance operation. The Syria report (2024) documents multiple anomalous light sources during a night operation. Additionally, infrared sensor platforms captured multiple anomalous thermal signatures over the western United States between September and December 2025 — these images are included in the PURSUE release.",
+  },
+  {
+    title: "AARO Case Archive — 2,400+ Reports",
+    agency: "All-domain Anomaly Resolution Office (DoD)",
+    year: "2022–2026 (Ongoing)",
+    classification: "VARIOUS",
+    summary: "The All-domain Anomaly Resolution Office has received over 2,400 UAP reports — the highest since AARO was established in 2022. Approximately half resolved as mundane objects. 900+ reports lack sufficient data for analysis and remain in the active archive. Only a 'very small percentage' display truly anomalous signatures.",
+    documents: [
+      { label: "AARO Official UAP Records", url: "https://www.aaro.mil/UAP-Records/" },
+      { label: "AARO Official UAP Imagery", url: "https://www.aaro.mil/UAP-Cases/Official-UAP-Imagery/" },
+      { label: "AARO Reporting Trends", url: "https://www.aaro.mil/UAP-Cases/UAP-Reporting-Trends/" },
+      { label: "AARO 2025 Mission Brief (PDF)", url: "https://www.aaro.mil/Portals/136/PDFs/AARO_Mission_Brief_2025.pdf" },
+      { label: "AARO Declassification Info Paper (PDF)", url: "https://www.aaro.mil/Portals/136/PDFs/Information%20Papers/AARO_Declassification_Info_Paper_2025.pdf" },
+    ],
+    details: "757 new reports were submitted between May 2023 and June 2024 alone. AARO categorizes objects as balloons, birds, drones, satellites, aircraft, or 'unresolved.' The office states it has 'discovered no evidence of extraterrestrial beings, activity or technology' — but acknowledges that the unresolved cases include phenomena that defy conventional explanation. The 2024 ODNI Consolidated Annual Report provides the most recent statistical breakdown.",
+  },
+  {
+    title: "National Archives UAP Records Collection (RG 615)",
+    agency: "National Archives and Records Administration",
+    year: "2024–Present (Rolling)",
+    classification: "UNCLASSIFIED",
+    summary: "The FY2024 NDAA mandated NARA establish a dedicated UAP Records Collection (Record Group 615). Every federal agency was required to review, identify, and transfer releasable UAP records by September 30, 2025. Bulk downloads updated at least 3 times per year.",
+    documents: [
+      { label: "NARA UAP Research Page", url: "https://www.archives.gov/research/topics/uaps" },
+      { label: "Record Group 615 — UAP Collection", url: "https://www.archives.gov/research/topics/uaps/rg-615" },
+      { label: "Bulk Downloads (ZIP Archives)", url: "https://www.archives.gov/research/catalog/catalog-bulk-downloads/uap-bulk-download" },
+    ],
+    details: "Records are delivered as ZIP archives containing PDFs, image files, video files, and JSON metadata. Agencies submit metadata via CSV template. Contributing agencies include ODNI, Office of the Secretary of Defense, FAA, Nuclear Regulatory Commission, and others. NARA continues to accession new records on a rolling basis — this collection will grow significantly over the next several years.",
+  },
+  {
+    title: "Immaculate Constellation — Whistleblower Report",
+    agency: "Congressional Record / Whistleblower",
+    year: "November 2024",
+    classification: "ALLEGED SAP → CONGRESSIONAL RECORD",
+    summary: "A whistleblower alleged the existence of 'Immaculate Constellation,' described as a classified Special Access Program created in 2017 to consolidate UAP imagery intelligence from tasked and untasked collection platforms across U.S. government databases. The 12-page report was entered into the Congressional Record.",
+    documents: [
+      { label: "Whistleblower Report (Congressional Record PDF)", url: "https://mace.house.gov/sites/evo-subsites/mace.house.gov/files/evo-media-document/Cannon%20212_20241113_154539.pdf" },
+      { label: "DNI FOIA Response — Immaculate Constellation", url: "https://www.dni.gov/files/documents/FOIA/DF-2025-00021-Immaculate-Constellation-descrp-from-UNCLASS-Press-22-Oct-2024.pdf" },
+    ],
+    details: "The report describes seven categories of UAP evidence allegedly collected through classified sensor systems. First reported by journalist Michael Shellenberger during a November 2024 Congressional hearing. The Pentagon officially denied the program's existence. The DNI released a FOIA response acknowledging the public press inquiry but neither confirming nor denying the program. The report's entry into the Congressional Record gives it legal standing regardless of Pentagon denial.",
+  },
+  {
+    title: "UAP Disclosure Legislation — Active Bills",
+    agency: "U.S. Congress (119th Session)",
+    year: "2025–2026",
+    classification: "PUBLIC LAW / PROPOSED",
+    summary: "Multiple active bills: UAP Disclosure Act of 2025 ($20M budget, 25-year disclosure mandate), UAP Transparency Act (H.R.1187), UAP Whistleblower Protection Act (H.R.5060), and the Schumer-Rounds Amendment explicitly referencing 'non-human intelligence' and 'technologies of unknown origin.'",
+    documents: [
+      { label: "H.R.1187 — UAP Transparency Act (Full Text)", url: "https://www.congress.gov/bill/119th-congress/house-bill/1187/text" },
+      { label: "H.R.5060 — Whistleblower Protection Act", url: "https://www.congress.gov/bill/119th-congress/house-bill/5060/text" },
+      { label: "Schumer-Rounds Senate Amendment 3111", url: "https://www.congress.gov/amendment/119th-congress/senate-amendment/3111/text" },
+      { label: "ODNI 2024 UAP Consolidated Report", url: "https://www.dni.gov/index.php/newsroom/reports-publications/reports-publications-2024/4020-uap-2024" },
+    ],
+    details: "The UAP Disclosure Act of 2025 (Rep. Eric Burlison, MO-07) would prohibit destruction of UAP records, create a UAP Records Review Board, and require public disclosure within 25 years unless the President certifies a national security exemption. The Transparency Act requires all agencies to declassify within 270 days. The Whistleblower Protection Act shields federal personnel who disclose UAP information involving taxpayer funds. FY2026 NDAA enacted three UAP provisions: mandatory briefings on NORAD/NORTHCOM intercepts back to January 1, 2004; AARO classification guide accounting; and streamlined federal reporting processes. Congress demanded 46 classified UAP videos with an April 2026 deadline — compliance is ongoing.",
   },
 ];
 
@@ -341,6 +462,19 @@ const timeline = [
   { year: "2014", event: "Dean Radin publishes consciousness double-slit results at IONS" },
   { year: "2021", event: "Gateway Report Page 25 recovered and released" },
   { year: "2023", event: "UVA DOPS continues consciousness research; renewed academic interest" },
+  { year: "2023", event: "Federal law enforcement officers independently report 'orbs launching other orbs' across multiple locations" },
+  { year: "2024", event: "AARO caseload surpasses 2,000 reports — highest since office established" },
+  { year: "2024", event: "Immaculate Constellation whistleblower report entered into Congressional Record — alleges classified UAP imagery SAP since 2017" },
+  { year: "2024", event: "FY2024 NDAA mandates National Archives establish UAP Records Collection (Record Group 615)" },
+  { year: "2024", event: "'The Age of Disclosure' documentary becomes highest-grossing documentary on Amazon Prime Video within 48 hours" },
+  { year: "2025", event: "UAP Disclosure Act, Transparency Act (H.R.1187), and Whistleblower Protection Act (H.R.5060) introduced in Congress" },
+  { year: "2025", event: "Infrared sensors capture anomalous thermal signatures over western United States (Sept–Dec)" },
+  { year: "2025", event: "Schumer-Rounds Amendment uses explicit language referencing 'non-human intelligence' and 'technologies of unknown origin'" },
+  { year: "2025", event: "FY2026 NDAA enacted — mandates NORAD/NORTHCOM UAP intercept briefings back to January 1, 2004" },
+  { year: "2026", event: "Congress demands release of 46 classified UAP videos with April deadline" },
+  { year: "2026", event: "AARO caseload exceeds 2,400 reports — Secretary Hegseth doubles down on disclosure" },
+  { year: "2026", event: "May 8 — PURSUE program launches at war.gov/UFO — 162 files released in largest coordinated UAP disclosure in U.S. history" },
+  { year: "2026", event: "May 22 — PURSUE Release 02: 222 new files including first-ever military engagement footage (F-16 Lake Huron shootdown), submarine transmedium video, 51 audio recordings, and UAP formation near Iran" },
 ];
 
 /* ────────────────────────────────────────────────────────────
@@ -356,6 +490,14 @@ const media = [
   { title: "The Black Vault — Declassified Psychic Files", type: "FOIA Archive", desc: "John Greenewald's comprehensive FOIA archive containing thousands of declassified government documents on psychic research.", url: "https://www.theblackvault.com/documentarchive/the-remote-viewing-program/" },
   { title: "Dean Radin — Consciousness and Quantum Physics (Talks)", type: "Lectures", desc: "Chief Scientist at IONS discusses evidence for consciousness influencing physical systems.", url: "https://www.youtube.com/results?search_query=dean+radin+consciousness+quantum" },
   { title: "Smithsonian — Rhine ESP Cards Collection", type: "Museum Archive", desc: "Original Zener cards from Rhine's Duke University lab held in the Smithsonian collection.", url: "https://www.si.edu/search?edan_q=zener+cards" },
+  { title: "PURSUE Portal — war.gov/UFO", type: "Government Archive", desc: "The official Pentagon portal for the PURSUE program. 162 files released May 8, 2026 — the largest coordinated UAP file release in U.S. history. Free access, no clearance required.", url: "https://www.war.gov/UFO/" },
+  { title: "The Age of Disclosure (2025)", type: "Documentary", desc: "Feature documentary by Dan Farah featuring 34 current and former government, military, and intelligence officials including Secretary Rubio, Senators Gillibrand and Rounds. Amazon Prime's highest-grossing documentary within 48 hours.", url: "https://www.amazon.com/Age-Disclosure/dp/B0DFZ4MMLV" },
+  { title: "NARA UAP Bulk Downloads", type: "Government Archive", desc: "National Archives Record Group 615 — ZIP archives containing PDFs, images, video, and JSON metadata from across federal agencies. Updated at least 3 times per year.", url: "https://www.archives.gov/research/catalog/catalog-bulk-downloads/uap-bulk-download" },
+  { title: "AARO Official UAP Imagery", type: "Government Archive", desc: "Official imagery from the All-domain Anomaly Resolution Office. Case-specific photographs and sensor captures from the 2,400+ report archive.", url: "https://www.aaro.mil/UAP-Cases/Official-UAP-Imagery/" },
+  { title: "ODNI 2024 UAP Consolidated Annual Report", type: "Government Report", desc: "Office of the Director of National Intelligence annual statistical analysis of UAP reports, trends, and categorization across all reporting agencies.", url: "https://www.dni.gov/index.php/newsroom/reports-publications/reports-publications-2024/4020-uap-2024" },
+  { title: "Immaculate Constellation — Congressional Record", type: "Whistleblower Report", desc: "12-page whistleblower report alleging a classified SAP consolidating UAP imagery intelligence since 2017. Entered into Congressional Record during November 2024 hearing.", url: "https://mace.house.gov/sites/evo-subsites/mace.house.gov/files/evo-media-document/Cannon%20212_20241113_154539.pdf" },
+  { title: "Lake Huron F-16 Shootdown — Declassified Cockpit Footage", type: "Military Video", desc: "46-second infrared cockpit recording of a Wisconsin Air National Guard F-16C firing an AIM-9X Sidewinder at an unidentified object over Lake Huron on February 12, 2023. First-ever released footage of U.S. military engaging a UAP. Released May 22, 2026 via PURSUE.", url: "https://www.war.gov/UFO/" },
+  { title: "PURSUE Release 02 — Full Analysis", type: "Analysis", desc: "Comprehensive analysis of the 222-file second PURSUE release including submarine transmedium footage, Iran UAP formation, Apollo 12 green fireballs, and 51 audio witness testimonies.", url: "https://www.warufo.com/" },
 ];
 
 /* ────────────────────────────────────────────────────────────
@@ -385,13 +527,31 @@ function ExpandableCard({ children, expanded, onClick, className = "" }: {
    PAGE
    ──────────────────────────────────────────────────────────── */
 export default function FilesPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("declassified");
+  return (
+    <Suspense fallback={<main className="relative min-h-screen pt-16"><ParticleField /><div className="flex items-center justify-center h-[60vh]"><div className="h-3 w-3 rounded-full bg-signal animate-glow-breathe" /></div></main>}>
+      <FilesContent />
+    </Suspense>
+  );
+}
+
+function FilesContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const validTabs: Tab[] = ["declassified","disclosure","studies","individuals","schools","timeline","media"];
+  const [activeTab, setActiveTab] = useState<Tab>(tabParam && validTabs.includes(tabParam) ? tabParam : "declassified");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const toggle = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: "declassified", label: "DECLASSIFIED", count: declassified.length },
+    { id: "disclosure", label: "UAP DISCLOSURE", count: disclosure.length },
     { id: "studies", label: "STUDIES", count: studies.length },
     { id: "individuals", label: "SUBJECTS", count: individuals.length },
     { id: "schools", label: "INSTITUTES", count: schools.length },
@@ -409,12 +569,14 @@ export default function FilesPage() {
           <p className="text-xs tracking-[0.4em] text-ember font-medium">THE ARCHIVES</p>
           <h1 className="mt-3 text-5xl font-bold uppercase md:text-6xl">FILES</h1>
           <p className="mt-4 max-w-2xl text-bone/50 leading-relaxed">
-            Declassified government documents, peer-reviewed research, documented individuals,
-            and 1,000+ years of institutional inquiry into the boundaries of human perception.
-            All links point to official sources — CIA, FBI, NASA, academic journals, and libraries.
+            Declassified government documents, UAP disclosure files, peer-reviewed research, documented individuals,
+            and 1,000+ years of institutional inquiry into the boundaries of human perception and anomalous phenomena.
+            All links point to official sources — CIA, FBI, NASA, Pentagon, AARO, academic journals, and libraries.
           </p>
-          <div className="mt-6 flex items-center gap-4 text-xs text-bone/30">
-            <span>{declassified.length + studies.length + individuals.length + schools.length} entries</span>
+          <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-bone/30">
+            <span>{declassified.length + disclosure.length + studies.length + individuals.length + schools.length} entries</span>
+            <span>·</span>
+            <span>{disclosure.length} UAP disclosure files</span>
             <span>·</span>
             <span>{timeline.length} timeline events</span>
             <span>·</span>
@@ -490,6 +652,79 @@ export default function FilesPage() {
                   </ExpandableCard>
                 ))}
               </AnimatePresence>
+            </div>
+          )}
+
+          {/* UAP DISCLOSURE */}
+          {activeTab === "disclosure" && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <AnimatePresence mode="popLayout">
+                {disclosure.map((doc) => (
+                  <ExpandableCard key={doc.title} expanded={expandedId === doc.title} onClick={() => toggle(doc.title)}>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className={`inline-block rounded px-2 py-0.5 text-[9px] font-bold tracking-wider ${
+                        doc.classification.includes("TOP") || doc.classification.includes("SECRET") ? "bg-hazard/15 text-hazard" :
+                        doc.classification.includes("ALLEGED") ? "bg-pulse/15 text-pulse" :
+                        "bg-ember/15 text-ember"
+                      }`}>{doc.classification}</span>
+                      <span className="text-[10px] text-bone/30">{doc.year}</span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-bold">{doc.title}</h3>
+                    <p className="mt-1 text-[11px] tracking-wider text-signal/60">{doc.agency}</p>
+                    <p className="mt-3 text-sm text-bone/60 leading-relaxed">{doc.summary}</p>
+
+                    <AnimatePresence>
+                      {expandedId === doc.title && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-4 border-t border-bone/10 pt-4">
+                            <p className="text-sm text-bone/70 leading-relaxed">{doc.details}</p>
+                            <div className="mt-4 space-y-2">
+                              <p className="text-[10px] font-semibold tracking-[0.2em] text-ember">DOCUMENTS &amp; LINKS</p>
+                              {doc.documents.map((link) => (
+                                <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"
+                                   className="flex items-center gap-2 rounded-lg border border-bone/10 bg-black/40 px-4 py-3 text-sm text-signal/80 transition hover:border-signal/30 hover:text-signal">
+                                  <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                  {link.label}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </ExpandableCard>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* CONNECTION BRIDGE — Links disclosure to psi research */}
+          {activeTab === "disclosure" && (
+            <div className="mt-8 rounded-xl border border-pulse/20 bg-pulse/5 p-6">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-8 w-8 items-center justify-center">
+                  <div className="absolute h-8 w-8 rounded-full border border-pulse/30 animate-pulse-ring" />
+                  <div className="h-3 w-3 rounded-full bg-pulse/60" />
+                </div>
+                <p className="text-[10px] font-semibold tracking-[0.3em] text-pulse">SIGNAL CONNECTION</p>
+              </div>
+              <p className="mt-3 text-sm text-bone/60 leading-relaxed">
+                The UAP disclosure timeline intersects directly with the consciousness research archive.
+                The same agencies that ran <span className="text-signal">Stargate</span>, <span className="text-signal">Gateway Process</span>, and <span className="text-signal">SCANATE</span> are
+                now releasing UAP files through PURSUE. Remote viewers from the <span className="text-ember">CIA psi programs</span> reported
+                non-human intelligence contact decades before official disclosure. The <span className="text-signal">Immaculate Constellation</span> whistleblower
+                report describes sensor data categories that overlap with <span className="text-ember">PEAR Lab</span> anomaly signatures.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button onClick={() => { setActiveTab("declassified"); setExpandedId(null); }} className="rounded-full border border-signal/20 bg-signal/5 px-3 py-1 text-[10px] tracking-wider text-signal transition hover:bg-signal/15">VIEW STARGATE FILES &rarr;</button>
+                <button onClick={() => { setActiveTab("studies"); setExpandedId(null); }} className="rounded-full border border-ember/20 bg-ember/5 px-3 py-1 text-[10px] tracking-wider text-ember transition hover:bg-ember/15">VIEW PEAR LAB DATA &rarr;</button>
+                <button onClick={() => { setActiveTab("timeline"); setExpandedId(null); }} className="rounded-full border border-bone/10 bg-bone/5 px-3 py-1 text-[10px] tracking-wider text-bone/50 transition hover:bg-bone/10">FULL TIMELINE &rarr;</button>
+              </div>
             </div>
           )}
 
@@ -623,9 +858,9 @@ export default function FilesPage() {
       <div className="px-6 pb-16">
         <div className="mx-auto max-w-6xl rounded-xl border border-bone/5 bg-black/20 p-6 text-center">
           <p className="text-xs text-bone/30 leading-relaxed max-w-2xl mx-auto">
-            This archive presents documented research and historical records for educational purposes.
-            All links point to official government, academic, and institutional sources.
-            The Telekinesis Support Group does not make supernatural claims.
+            This archive presents documented research, declassified government files, and UAP disclosure records for educational purposes.
+            All links point to official government, academic, and institutional sources — war.gov, archives.gov, aaro.mil, congress.gov, CIA, FBI, NASA, and peer-reviewed journals.
+            The Telekinesis Support Group does not make claims about the nature of these phenomena.
             <br /><span className="text-bone/50">No claims. No promises. Just show up and pay attention.</span>
           </p>
         </div>

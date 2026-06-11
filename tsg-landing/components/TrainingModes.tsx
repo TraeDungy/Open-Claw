@@ -1,5 +1,7 @@
 "use client";
 import ScrollReveal from "./ScrollReveal";
+import CadenceSelector from "./CadenceSelector";
+import { useSignup } from "@/lib/hooks/useSignup";
 
 const modes = [
   { icon: "☆", title: "CLASSIC", desc: "Zener-style 5 symbol test" },
@@ -15,6 +17,8 @@ const principles = [
 ];
 
 export default function TrainingModes() {
+  const { email, setEmail, status, message, submit, submitCadence } = useSignup("training-modes");
+
   return (
     <section className="px-6 py-20">
       <div className="mx-auto max-w-6xl grid gap-8 md:grid-cols-3">
@@ -52,16 +56,31 @@ export default function TrainingModes() {
           <p className="mt-4 text-sm text-bone/60 leading-relaxed">
             Be the first to know about sessions, tools, and updates.
           </p>
-          <div className="mt-4 flex gap-2">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-lg border border-bone/15 bg-black/50 px-3 py-2.5 text-sm placeholder:text-bone/30 focus:border-signal/40 focus:outline-none"
-            />
-            <button className="rounded-lg bg-ember px-4 py-2.5 text-xs font-bold text-black transition hover:shadow-[0_0_20px_rgba(255,144,46,0.3)]">
-              JOIN
-            </button>
-          </div>
+          {(status === "cadence-select" || status === "cadence-loading" || status === "done") ? (
+            <div className="mt-4">
+              <CadenceSelector onSelect={submitCadence} loading={status === "cadence-loading"} />
+            </div>
+          ) : (
+            <form onSubmit={submit} className="mt-4 flex gap-2">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                disabled={status === "loading"}
+                className="flex-1 rounded-lg border border-bone/15 bg-black/50 px-3 py-2.5 text-sm placeholder:text-bone/30 focus:border-signal/40 focus:outline-none disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="rounded-lg bg-ember px-4 py-2.5 text-xs font-bold text-black transition hover:shadow-[0_0_20px_rgba(255,144,46,0.3)] disabled:opacity-50"
+              >
+                {status === "loading" ? "..." : "JOIN"}
+              </button>
+            </form>
+          )}
+          {status === "error" && <p className="mt-2 text-[10px] text-hazard">{message}</p>}
           <p className="mt-3 text-[10px] text-bone/30">Small group. Limited sessions. No spam.</p>
         </ScrollReveal>
       </div>
