@@ -1,3 +1,5 @@
 submissions.jsonl
 node_modules/
 .env
+submissions.csv
+uploads/

@@ -327,19 +327,29 @@ body {
 @keyframes credit-bump {
   30% { transform: scale(1.35); color: #fff; }
 }
-.progress-bulbs { display: flex; gap: 7px; }
-.pbulb {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #3a2a55;
-  transition: all .3s var(--spring);
+.progress-wrap {
+  flex: 1;
+  margin: 0 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
-.pbulb.current {
-  background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
-  animation: pbulb-blink .8s infinite alternate;
+.progress-track {
+  width: 100%; height: 8px;
+  background: #2a1a40;
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px #000;
 }
-.pbulb.done { background: var(--gold); box-shadow: 0 0 8px rgba(255,215,0,.8); transform: scale(1.1); }
-@keyframes pbulb-blink { from { opacity: 1; } to { opacity: .4; } }
+.progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+  border-radius: 99px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, .7);
+  transition: width .5s var(--spring);
+}
+.progress-label {
+  font-size: 10px; font-weight: 900; letter-spacing: .15em;
+  color: var(--gold); opacity: .8;
+}
 .mute-btn {
   background: none; border: none; font-size: 20px; cursor: pointer;
   opacity: .7; transition: transform .15s var(--spring);
@@ -413,7 +423,38 @@ body {
   margin-bottom: 6px;
 }
 .card-sub { font-size: 14px; font-weight: 700; opacity: .65; margin-bottom: 18px; line-height: 1.4; }
-.card-body { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.card-body { flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-bottom: 4px; }
+
+/* composite field blocks */
+.field { display: flex; flex-direction: column; gap: 7px; }
+.f-label {
+  font-size: 13px; font-weight: 900;
+  letter-spacing: .04em;
+  color: var(--cyan);
+  text-shadow: 0 0 6px rgba(0, 240, 255, .4);
+  line-height: 1.35;
+}
+.neon-input.mini { padding: 12px 14px; font-size: 15px; }
+input[type="date"].neon-input { color-scheme: dark; }
+
+/* photo upload */
+.photo-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  border: 2px dashed #4a2a7a;
+  border-radius: 18px;
+  padding: 18px;
+  transition: border-color .25s;
+}
+.photo-drop.has-photo { border-color: var(--gold); border-style: solid; }
+.photo-preview {
+  display: none;
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px -8px #000;
+}
+.photo-drop.has-photo .photo-preview { display: block; }
+.photo-btn { font-size: 15px; padding: 13px 22px; }
 
 /* LOCKED stamp shown while dragging right */
 .stamp {
