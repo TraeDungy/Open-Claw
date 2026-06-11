@@ -117,7 +117,7 @@ export default function ThePanel() {
           ))}
         </div>
 
-        {/* Character card — quote left, figure right */}
+        {/* Full-width layout — card left, figure right outside card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
@@ -125,62 +125,60 @@ export default function ThePanel() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="bento-card overflow-hidden"
+            className="relative flex flex-col md:flex-row items-stretch min-h-[500px]"
           >
-            <div className="flex flex-col md:flex-row">
-              {/* Left: quote content */}
-              <div className="flex-1 p-8 md:p-12 flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className={`tag ${TIER_COLORS[char.tier]}`}>
-                    {char.tier}
-                  </span>
-                  <span className="text-mono text-chrome/60 text-xs">
-                    on: {char.topic}
-                  </span>
-                </div>
-
-                <h3 className="font-heading text-3xl md:text-4xl font-bold text-raw mb-1">
-                  {char.name}
-                </h3>
-                <p className="text-mono text-chrome text-xs mb-6">
-                  {char.title}
-                </p>
-
-                <blockquote className="text-raw text-lg md:text-xl leading-relaxed border-l-2 border-input pl-6">
-                  &ldquo;{char.quote}&rdquo;
-                </blockquote>
-
-                <p className="text-chrome/40 text-xs mt-8 font-mono">
-                  AI-generated interpretation for entertainment purposes. Does not
-                  represent actual views.
-                </p>
+            {/* Left: quote card */}
+            <div className="flex-1 bento-card p-8 md:p-12 flex flex-col justify-center z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <span className={`tag ${TIER_COLORS[char.tier]}`}>
+                  {char.tier}
+                </span>
+                <span className="text-mono text-chrome/60 text-xs">
+                  on: {char.topic}
+                </span>
               </div>
 
-              {/* Right: character portrait */}
-              <div className="relative w-full md:w-[340px] lg:w-[420px] min-h-[300px] md:min-h-[400px] flex-shrink-0">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`${active}-${imgIndex}`}
-                    initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="absolute inset-0"
-                  >
-                    <Image
-                      src={char.images[imgIndex % char.images.length]}
-                      alt={char.name}
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 100vw, 420px"
-                      priority
-                    />
-                    {/* Gradient overlay blending into the card */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-static/80 via-transparent to-transparent md:block hidden" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-static via-transparent to-transparent md:hidden" />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+              <h3 className="font-heading text-3xl md:text-4xl font-bold text-raw mb-1">
+                {char.name}
+              </h3>
+              <p className="text-mono text-chrome text-xs mb-6">
+                {char.title}
+              </p>
+
+              <blockquote className="text-raw text-lg md:text-xl leading-relaxed border-l-2 border-input pl-6 max-w-xl">
+                &ldquo;{char.quote}&rdquo;
+              </blockquote>
+
+              <p className="text-chrome/40 text-xs mt-8 font-mono">
+                AI-generated interpretation for entertainment purposes. Does not
+                represent actual views.
+              </p>
+            </div>
+
+            {/* Right: figure — outside the card, full section height */}
+            <div className="relative w-full md:w-[380px] lg:w-[460px] flex-shrink-0 min-h-[350px] md:min-h-0">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${active}-${imgIndex}`}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={char.images[imgIndex % char.images.length]}
+                    alt={char.name}
+                    fill
+                    className="object-contain object-right-bottom md:object-right"
+                    sizes="(max-width: 768px) 100vw, 460px"
+                    priority
+                  />
+                  {/* Fade into background on left edge */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-static/90 via-transparent to-transparent hidden md:block" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-static/80 via-transparent to-transparent md:hidden" />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </motion.div>
         </AnimatePresence>
