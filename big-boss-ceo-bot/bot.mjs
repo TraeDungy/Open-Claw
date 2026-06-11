@@ -1,27 +1,12 @@
 /**
  * BIG BOSS CEO Telegram Bot
  * Main entry point — initializes bot, notifier, CEO loop, digest cron
+ *
+ * env.mjs MUST stay the first import: static imports are hoisted, so the old
+ * inline .env loader here ran AFTER paperclip.mjs/llm.mjs had already read
+ * their (empty) process.env values at load time.
  */
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// Load .env manually (no dotenv dep needed)
-const __dir = dirname(fileURLToPath(import.meta.url));
-const envPath = join(__dir, '.env');
-try {
-  const lines = readFileSync(envPath, 'utf8').split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const idx = trimmed.indexOf('=');
-    if (idx < 0) continue;
-    const key = trimmed.slice(0, idx).trim();
-    const val = trimmed.slice(idx + 1).trim();
-    if (!process.env[key]) process.env[key] = val;
-  }
-} catch {}
-
+import './env.mjs';
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
 import { listIssues, listAgents, getDashboard, createIssue, commentIssue, updateIssue, wakeupAgent } from './paperclip.mjs';
@@ -29,6 +14,7 @@ import { startNotifier } from './notifier.mjs';
 import { startCEOLoop, runCycle } from './ceo-loop.mjs';
 import { startAllPMLoops } from './pm-loop.mjs';
 import { generateDigest } from './digest.mjs';
+import { startSecurityMonitor } from './security-monitor.mjs';
 import { chat } from './llm.mjs';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -64,6 +50,19 @@ async function send(text) {
     }
   }
 }
+
+// ── Owner-only command guard ────────────────────────────────────────────────
+// Command handlers used to run for ANY chat that messaged the bot — only the
+// free-text handler checked the chat ID. Wrap onText so every command is
+// restricted to the owner's chat; the security monitor alerts on the rest.
+const _onText = bot.onText.bind(bot);
+bot.onText = (regexp, handler) => _onText(regexp, (msg, match) => {
+  if (String(msg.chat.id) !== CHAT_ID) {
+    console.warn(`[security] blocked command from unknown chat ${msg.chat.id}: ${(msg.text || '').slice(0, 80)}`);
+    return;
+  }
+  return handler(msg, match);
+});
 
 // ── Commands ────────────────────────────────────────────────────────────────
 
@@ -349,6 +348,9 @@ Be the CEO — confident, strategic, no fluff.`;
 // ── Startup ──────────────────────────────────────────────────────────────────
 
 console.log('[big-boss-ceo-bot] starting up...');
+
+// Security monitor: polling conflicts (stolen token), webhook hijack, unknown chats
+startSecurityMonitor(bot, send);
 
 // Start autonomous notifier (polls every 2min, pushes priorities on boot)
 startNotifier(send);

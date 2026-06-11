@@ -1,0 +1,82 @@
+# 🦞 Open-Claw
+
+Open Claw infrastructure for Trial X Fire: the BIG BOSS CEO autonomous agent system, plus installer and keep-alive tooling for [OpenClaw](https://www.npmjs.com/package/openclaw).
+
+## BIG BOSS CEO bot (`big-boss-ceo-bot/`)
+
+Telegram-driven autonomous operations: a CEO loop (every 15 min) and four PM loops (30–45 min) review the Paperclip board via LLM and create/assign/close/reassign work; a notifier loop (every 2 min) pushes alerts to Telegram.
+
+```bash
+cd big-boss-ceo-bot
+cp .env.example .env   # fill in real tokens — never commit .env
+npm install
+pm2 start ecosystem.config.cjs
+```
+
+Loop reliability features:
+
+- **No overlapping cycles** — loops are chained timeouts, so a slow LLM/CLI call can't stack cycles on top of each other.
+- **Action memory** — the CEO and PMs see their own last 24h of actions in context (persisted in `state.json`), so they don't repeat themselves across cycles and restarts.
+- **Duplicate-issue guard** — `CREATE_ISSUE` actions matching an open issue title (or one created in the last 24h) are skipped.
+- **Wakeup throttle** — an agent is woken at most once per hour, globally across the CEO and all PM loops.
+- **LLM timeout + retry** — LiteLLM calls time out after 120s (`LITELLM_TIMEOUT_MS`) and retry once instead of hanging a cycle forever.
+- **Quiet bootstrap** — with a fresh `state.json`, the notifier marks all existing issues seen silently instead of flooding Telegram on first boot.
+
+### Security
+
+- **Owner-only commands** — every `/command` is restricted to the owner chat (`CHAT_ID`); previously any chat could trigger `/push`, `/cycle`, `/done`, etc.
+- **Suspicious-activity monitor** (`security-monitor.mjs`) alerts you on Telegram when:
+  - another process polls with your bot token (409 conflict — the classic stolen-token signal),
+  - a webhook gets set on the bot while it runs in polling mode (auto-cleared),
+  - an unknown chat messages the bot (one alert per chat, all attempts logged).
+- **Token rotation** — after any exposure, get a fresh token from @BotFather (`/revoke`), then run `scripts/rotate-secrets.sh` on the VPS: it validates the new token, updates `.env`, optionally rotates the LiteLLM key, and restarts the bot.
+
+## Quick start
+
+```bash
+# 1. Install OpenClaw (handles old macOS, broken SSL, missing Node.js)
+./install.sh
+
+# 2. Keep the gateway running 24/7 (auto-restart on crash, start at login)
+./scripts/setup-service.sh
+
+# 3. Check that everything is healthy
+./scripts/doctor.sh
+```
+
+## What's in here
+
+| Script | Purpose |
+|---|---|
+| `install.sh` | Installs Node.js 22+ and OpenClaw. Works around old macOS TLS bugs, missing Homebrew, and broken curl with multiple fallback paths (Homebrew → MacPorts → nvm → direct binary download). |
+| `scripts/setup-service.sh` | Installs the gateway as an always-on service: launchd agent on macOS (`KeepAlive`), systemd user service on Linux (`Restart=always`), or a cron watchdog where systemd isn't available. Supports `--status` and `--uninstall`. |
+| `scripts/openclaw-watchdog.sh` | The restart loop itself: health-checks the gateway every 30s and restarts it when it goes down, with exponential backoff. Run it directly, or with `--once` from cron. |
+| `scripts/doctor.sh` | Full health check — Node version, CLI install, PATH, gateway status, keep-alive service, TLS connectivity — with a fix command for every failure. |
+
+## Configuration
+
+All scripts respect these environment variables:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `OPENCLAW_VERSION` | `latest` | Version installed by `install.sh` |
+| `OPENCLAW_INSTALL_DIR` | `/usr/local` | Where direct Node binaries are installed |
+| `OPENCLAW_LOG_DIR` | `~/.openclaw/logs` | Gateway and watchdog logs |
+| `OPENCLAW_WATCHDOG_INTERVAL` | `30` | Seconds between watchdog health checks |
+| `OPENCLAW_STATUS_CMD` | `openclaw gateway status` | Command that exits 0 when the gateway is healthy |
+| `OPENCLAW_START_CMD` | `openclaw gateway start` | Command the watchdog uses to restart the gateway |
+
+## Troubleshooting
+
+Start with the doctor — it checks everything and prints the fix for each failure:
+
+```bash
+./scripts/doctor.sh
+```
+
+Common issues:
+
+- **`openclaw: command not found` right after install** — npm's global bin isn't in your PATH. Run `export PATH="$(npm config get prefix)/bin:$PATH"` and add it to your shell profile.
+- **Gateway keeps dying** — install the keep-alive service (`./scripts/setup-service.sh`), then check `~/.openclaw/logs/gateway.err.log` for the underlying crash.
+- **Gateway stops when you log out (Linux)** — enable lingering: `sudo loginctl enable-linger $USER`.
+- **`curl: (35) Unknown SSL protocol error`** — your macOS curl is too old for TLS 1.2. `install.sh` works around this automatically; see its output for manual options (MacPorts curl, macOS upgrade).
