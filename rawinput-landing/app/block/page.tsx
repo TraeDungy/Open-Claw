@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+import ZoneView from "@/components/zones/ZoneView";
+
+const SpadesGame = dynamic(() => import("@/components/games/SpadesGame"), { ssr: false });
 
 // ── SPRITE LOADING ──
 const SPRITE_BASE = "/rawinput/block-sprites";
@@ -275,6 +279,7 @@ export default function BlockPage() {
   const spritesRef = useRef<SpriteMap>({});
   const [spritesLoaded, setSpritesLoaded] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [enteredZone, setEnteredZone] = useState<string | null>(null);
 
   // Handle user chat submit
   const handleChatSubmit = useCallback(() => {
@@ -568,6 +573,37 @@ export default function BlockPage() {
     [agents]
   );
 
+  // ── ZONE VIEW ──
+  if (enteredZone) {
+    const zone = ZONES.find((z) => z.id === enteredZone);
+    if (zone) {
+      return (
+        <main className="pt-16 min-h-screen bg-[#0a0a1a]">
+          <ZoneView
+            zoneId={zone.id}
+            zoneName={zone.name}
+            zoneIcon={zone.icon}
+            zoneColor={zone.color}
+            onExit={() => setEnteredZone(null)}
+          >
+            {zone.id === "bodega" && <SpadesGame />}
+            {zone.id !== "bodega" && (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <span className="text-6xl mb-4 block">{zone.icon}</span>
+                  <h3 className="font-heading text-2xl font-bold text-[#FFD700] mb-2">{zone.name}</h3>
+                  <p className="text-[#8B8B8B] text-sm font-mono">{zone.desc}</p>
+                  <p className="text-[#555] text-xs font-mono mt-4">Coming soon</p>
+                </div>
+              </div>
+            )}
+          </ZoneView>
+        </main>
+      );
+    }
+  }
+
+  // ── OVERWORLD ──
   return (
     <main className="pt-16 min-h-screen bg-[#0a0a1a]">
       {/* Header */}
@@ -602,27 +638,42 @@ export default function BlockPage() {
 
             {/* Zone selector */}
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-3">
-              {ZONES.map((zone) => (
-                <button
-                  key={zone.id}
-                  onClick={() => setSelectedZone(zone.id)}
-                  className={`p-2 rounded-lg text-center transition-all border ${
-                    selectedZone === zone.id
-                      ? "border-[color:var(--zc)] bg-[color:var(--zc)]/10']}]"
-                      : "border-[#333] hover:border-[#555]"
-                  }`}
-                  style={{
-                    borderColor: selectedZone === zone.id ? zone.color : undefined,
-                    backgroundColor: selectedZone === zone.id ? zone.color + "15" : undefined,
-                  }}
-                >
-                  <span className="text-lg">{zone.icon}</span>
-                  <p className="text-[10px] font-mono mt-1" style={{ color: zone.color }}>
-                    {zone.name}
-                  </p>
-                </button>
-              ))}
+              {ZONES.map((zone) => {
+                const isActive = selectedZone === zone.id;
+                const hasActivity = zone.id === "bodega"; // Spades available
+                return (
+                  <button
+                    key={zone.id}
+                    onClick={() => setSelectedZone(zone.id)}
+                    onDoubleClick={() => hasActivity && setEnteredZone(zone.id)}
+                    className={`p-2 rounded-lg text-center transition-all border ${
+                      isActive ? "" : "border-[#333] hover:border-[#555]"
+                    }`}
+                    style={{
+                      borderColor: isActive ? zone.color : undefined,
+                      backgroundColor: isActive ? zone.color + "15" : undefined,
+                    }}
+                  >
+                    <span className="text-lg">{zone.icon}</span>
+                    <p className="text-[10px] font-mono mt-1" style={{ color: zone.color }}>
+                      {zone.name}
+                    </p>
+                    {hasActivity && isActive && (
+                      <p className="text-[8px] font-mono text-[#FFD700] mt-0.5 animate-pulse">TAP TO ENTER</p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+            {/* Enter zone button when activity available */}
+            {selectedZone === "bodega" && (
+              <button
+                onClick={() => setEnteredZone("bodega")}
+                className="mt-2 w-full py-2 rounded-lg bg-[#2ECC71]/20 border border-[#2ECC71]/40 text-[#2ECC71] text-xs font-bold font-mono hover:bg-[#2ECC71]/30 transition-colors"
+              >
+                🏪 ENTER THE BODEGA — Play Spades
+              </button>
+            )}
           </div>
 
           {/* Right panel — chat + agent info */}
