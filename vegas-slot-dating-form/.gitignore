@@ -1,0 +1,6 @@
+submissions.jsonl
+node_modules/
+.env
+submissions.csv
+uploads/
+poly-swipe-local.html

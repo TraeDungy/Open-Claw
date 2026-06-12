@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0014" />
+<title>POLY SWIPE — Live Dating Game Show</title>
+<meta name="description" content="POLYWOOD presents POLY SWIPE, the live dating game show. One swipe could change everything — apply now to be on the show." />
+<link rel="preload" href="fonts/titan-one-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ MARQUEE FRAME (always on) ============ -->
+  <div class="marquee-frame" aria-hidden="true">
+    <div class="bulbs bulbs-top"></div>
+    <div class="bulbs bulbs-bottom"></div>
+  </div>
+
+  <!-- ============ SCREEN 1 : ATTRACT MODE ============ -->
+  <section id="screen-intro" class="screen active">
+    <header class="intro-header">
+      <div class="presents">P O L Y W O O D&nbsp;&nbsp;P R E S E N T S</div>
+      <div class="script-tag">One Swipe Could Change Everything.</div>
+      <h1 class="title">
+        <span class="title-line t1">POLY</span>
+        <span class="title-line t2">SWIPE</span>
+      </h1>
+      <div class="live-badge"><span class="live-word">LIVE</span> DATING GAME SHOW</div>
+      <p class="welcome-line">Couples · Throuples · Quads · Singles<br/><strong>WELCOME!</strong></p>
+    </header>
+
+    <div class="slot-machine" id="slotMachine">
+      <div class="slot-top-glow"></div>
+      <div class="reels" id="reels">
+        <div class="reel"><div class="reel-strip"></div></div>
+        <div class="reel"><div class="reel-strip"></div></div>
+        <div class="reel"><div class="reel-strip"></div></div>
+      </div>
+      <div class="payline"></div>
+    </div>
+
+    <button id="spinBtn" class="big-btn pulse">
+      <span class="btn-shine"></span>
+      PULL TO PLAY
+    </button>
+    <p class="fine-print">Apply now to be on the show! · 18+ only</p>
+    <div class="ticker">DATE&nbsp;·&nbsp;CONNECT&nbsp;·&nbsp;MATCH&nbsp;·&nbsp;REPEAT</div>
+  </section>
+
+  <!-- ============ SCREEN 2 : CARD DECK FORM ============ -->
+  <section id="screen-form" class="screen">
+    <header class="hud">
+      <div class="hud-left">
+        <div class="hud-label">CREDITS</div>
+        <div class="credits" id="credits">0</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel"></div>
+      </div>
+      <div class="hud-right">
+        <button id="muteBtn" class="mute-btn" aria-label="toggle sound">🔊</button>
+      </div>
+    </header>
+
+    <div class="deck-area">
+      <div class="card-deck" id="cardDeck"></div>
+      <div class="swipe-hint" id="swipeHint">
+        <img class="hint-arrow-img" src="assets/swipe-right.svg" alt="" />
+        <span>swipe right to lock it in</span>
+      </div>
+    </div>
+
+    <div class="deck-actions">
+      <button id="lockBtn" class="big-btn gold">
+        <span class="btn-shine"></span>
+        LOCK IT IN <span class="lock-arrow">→</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ SCREEN 3 : FINAL LEVER PULL ============ -->
+  <section id="screen-final" class="screen">
+    <h2 class="final-title">ALL IN? 🎰</h2>
+    <p class="final-sub">One pull. That's all it takes.</p>
+    <div class="lever-machine">
+      <div class="mini-reels" id="finalReels">
+        <div class="mini-reel">💘</div>
+        <div class="mini-reel">💘</div>
+        <div class="mini-reel">💘</div>
+      </div>
+      <div class="lever" id="lever">
+        <div class="lever-track"></div>
+        <div class="lever-knob" id="leverKnob"></div>
+      </div>
+    </div>
+    <p class="fine-print">pull the lever down to submit</p>
+  </section>
+
+  <!-- ============ SCREEN 4 : JACKPOT WIN ============ -->
+  <section id="screen-win" class="screen">
+    <div class="win-burst" aria-hidden="true"></div>
+    <h2 class="win-title">
+      <span>JACK</span><span>POT!</span>
+    </h2>
+    <div class="win-amount" id="winAmount">+777,777</div>
+    <p class="win-msg">You're officially in the game, <strong id="winName"></strong>! 🎉<br/>
+    Watch your inbox — if you're a match for the show, we'll deal you in.</p>
+    <button id="againBtn" class="big-btn">
+      <span class="btn-shine"></span>
+      REFER A PLAYER 💌
+    </button>
+    <div class="ticker">DATE&nbsp;·&nbsp;CONNECT&nbsp;·&nbsp;MATCH&nbsp;·&nbsp;REPEAT</div>
+  </section>
+
+  <!-- toast -->
+  <div id="toast" class="toast"></div>
+  <!-- particle layers -->
+  <div id="coinLayer" class="particle-layer" aria-hidden="true"></div>
+  <div id="confettiLayer" class="particle-layer" aria-hidden="true"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
