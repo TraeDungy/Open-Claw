@@ -20,33 +20,75 @@ const RANK_STR: Record<number, string> = {
   2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"J",12:"Q",13:"K",14:"A",
 };
 
-function CardFace({ card, onClick, playable }: {
-  card: Card; onClick?: () => void; playable?: boolean;
+// Oversized pixel-art cards — chunky, bold, game-boy aesthetic
+function CardFace({ card, onClick, playable, inTrick }: {
+  card: Card; onClick?: () => void; playable?: boolean; inTrick?: boolean;
 }) {
   const color = SUIT_COLORS[card.suit];
+  const size = inTrick ? "w-16 h-24 md:w-20 md:h-28" : "w-14 h-20 md:w-[72px] md:h-[100px]";
+
   return (
     <motion.button
       onClick={onClick}
-      disabled={!playable}
-      whileHover={playable ? { y: -10, scale: 1.08 } : undefined}
-      whileTap={playable ? { scale: 0.95 } : undefined}
-      className={`w-14 h-20 md:w-16 md:h-22 rounded-lg border-2 flex flex-col items-center justify-center transition-all ${
+      disabled={!playable && !inTrick}
+      whileHover={playable ? { y: -14, scale: 1.1 } : undefined}
+      whileTap={playable ? { scale: 0.92 } : undefined}
+      className={`${size} rounded-sm flex flex-col items-center justify-center relative transition-all ${
         playable
-          ? "cursor-pointer border-white/30 bg-[#1a1a2e] hover:shadow-lg hover:shadow-white/10"
-          : "cursor-default border-[#333] bg-[#111] opacity-50"
+          ? "cursor-pointer bg-[#fafaf5] shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.9)]"
+          : inTrick
+            ? "bg-[#fafaf5] shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)]"
+            : "cursor-default bg-[#d4d4c8] opacity-40 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
       }`}
-      style={playable ? { borderColor: color + "60" } : undefined}
+      style={{
+        border: `3px solid ${playable || inTrick ? "#111" : "#555"}`,
+        imageRendering: "pixelated",
+      }}
     >
-      <span className="font-mono font-bold text-xs" style={{ color }}>{RANK_STR[card.rank]}</span>
-      <span className="text-lg leading-none" style={{ color }}>{SUIT_SYM[card.suit]}</span>
+      {/* Top-left rank */}
+      <span
+        className="absolute top-1 left-1.5 font-mono font-black leading-none"
+        style={{ color, fontSize: inTrick ? "16px" : "13px", textShadow: "1px 1px 0 rgba(0,0,0,0.15)" }}
+      >
+        {RANK_STR[card.rank]}
+      </span>
+      {/* Center suit — oversized */}
+      <span
+        className="leading-none"
+        style={{ color, fontSize: inTrick ? "36px" : "28px", filter: "drop-shadow(1px 1px 0 rgba(0,0,0,0.1))" }}
+      >
+        {SUIT_SYM[card.suit]}
+      </span>
+      {/* Bottom-right rank (flipped) */}
+      <span
+        className="absolute bottom-1 right-1.5 font-mono font-black leading-none rotate-180"
+        style={{ color, fontSize: inTrick ? "16px" : "13px", textShadow: "1px 1px 0 rgba(0,0,0,0.15)" }}
+      >
+        {RANK_STR[card.rank]}
+      </span>
+      {/* Playable glow */}
+      {playable && (
+        <div className="absolute inset-0 rounded-sm animate-pulse" style={{ boxShadow: `0 0 12px ${color}40, inset 0 0 8px ${color}15` }} />
+      )}
     </motion.button>
   );
 }
 
-function CardBack() {
+function CardBack({ compact }: { compact?: boolean }) {
+  const size = compact ? "w-7 h-10" : "w-10 h-14";
   return (
-    <div className="w-8 h-11 rounded-lg border border-[#333] bg-gradient-to-br from-[#2d1b4e] to-[#1a1a3e] flex items-center justify-center">
-      <span className="text-[#FFD700]/30 text-[6px] font-mono">RI</span>
+    <div
+      className={`${size} rounded-sm flex items-center justify-center`}
+      style={{
+        border: "2px solid #111",
+        background: "repeating-conic-gradient(#2d1b4e 0% 25%, #1a1a3e 0% 50%) 50% / 8px 8px",
+        imageRendering: "pixelated",
+        boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.6)",
+      }}
+    >
+      <div className="w-3/4 h-3/4 border border-[#FFD700]/40 rounded-sm bg-[#1a1a3e]/60 flex items-center justify-center">
+        <span className="text-[#FFD700]/60 text-[7px] font-mono font-bold">RI</span>
+      </div>
     </div>
   );
 }
@@ -218,12 +260,12 @@ export default function SpadesGame() {
               <p className="text-[8px] font-mono mb-0.5" style={{ color: AGENT_COLORS[game.players[tc.playerIndex].name] }}>
                 {game.players[tc.playerIndex].name}
               </p>
-              <CardFace card={tc.card} />
+              <CardFace card={tc.card} inTrick />
             </motion.div>
           ))}
           {game.currentTrick.length === 0 && game.phase === "playing" && (
-            <p className="text-[#555] text-xs font-mono">
-              {game.currentPlayer === 0 ? "Your lead" : `${game.players[game.currentPlayer].name} leads...`}
+            <p className="text-[#555] text-sm font-mono font-bold" style={{ textShadow: "0 0 10px rgba(255,215,0,0.3)" }}>
+              {game.currentPlayer === 0 ? "YOUR LEAD" : `${game.players[game.currentPlayer].name} leads...`}
             </p>
           )}
         </div>
