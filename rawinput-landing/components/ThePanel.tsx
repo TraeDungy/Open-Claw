@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
 
@@ -166,13 +165,10 @@ export default function ThePanel() {
                   transition={{ duration: 0.5, ease: "easeOut" }}
                   className="absolute inset-0"
                 >
-                  <Image
+                  <img
                     src={char.images[imgIndex % char.images.length]}
                     alt={char.name}
-                    fill
-                    className="object-contain object-right-bottom md:object-right"
-                    sizes="(max-width: 768px) 100vw, 460px"
-                    priority
+                    className="absolute inset-0 w-full h-full object-contain object-right-bottom md:object-right"
                   />
                   {/* Fade into background on left edge */}
                   <div className="absolute inset-0 bg-gradient-to-r from-static/90 via-transparent to-transparent hidden md:block" />
