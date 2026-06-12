@@ -8,7 +8,9 @@ import {
 } from "@/lib/spades-engine";
 import { aiBid, aiPlayCard, getTrashTalk } from "@/lib/spades-ai";
 
-// ── CARD VISUALS ──
+// ── CARD VISUALS — Pixel Art Sprites ──
+
+const CARD_SPRITE_BASE = "/rawinput/block-sprites/cards";
 
 const SUIT_COLORS: Record<string, string> = {
   spades: "#FFFFFF", hearts: "#FF3D00", diamonds: "#FFD600", clubs: "#00FF88",
@@ -17,58 +19,55 @@ const SUIT_SYM: Record<string, string> = {
   spades: "♠", hearts: "♥", diamonds: "♦", clubs: "♣",
 };
 const RANK_STR: Record<number, string> = {
+  2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"j",12:"q",13:"k",14:"a",
+};
+const RANK_DISPLAY: Record<number, string> = {
   2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"J",12:"Q",13:"K",14:"A",
 };
 
-// Oversized pixel-art cards — chunky, bold, game-boy aesthetic
+function cardSpriteUrl(card: Card): string {
+  return `${CARD_SPRITE_BASE}/${RANK_STR[card.rank]}_${card.suit}.png`;
+}
+
+// Pixel-art cards using generated sprites — oversized, chunky
 function CardFace({ card, onClick, playable, inTrick }: {
   card: Card; onClick?: () => void; playable?: boolean; inTrick?: boolean;
 }) {
   const color = SUIT_COLORS[card.suit];
-  const size = inTrick ? "w-16 h-24 md:w-20 md:h-28" : "w-14 h-20 md:w-[72px] md:h-[100px]";
+  const size = inTrick ? "w-20 h-28 md:w-24 md:h-32" : "w-16 h-22 md:w-[76px] md:h-[104px]";
+  const spriteUrl = cardSpriteUrl(card);
 
   return (
     <motion.button
       onClick={onClick}
       disabled={!playable && !inTrick}
-      whileHover={playable ? { y: -14, scale: 1.1 } : undefined}
-      whileTap={playable ? { scale: 0.92 } : undefined}
-      className={`${size} rounded-sm flex flex-col items-center justify-center relative transition-all ${
+      whileHover={playable ? { y: -14, scale: 1.12 } : undefined}
+      whileTap={playable ? { scale: 0.9 } : undefined}
+      className={`${size} rounded-sm relative overflow-hidden transition-all ${
         playable
-          ? "cursor-pointer bg-[#fafaf5] shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.9)]"
+          ? "cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.9)]"
           : inTrick
-            ? "bg-[#fafaf5] shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)]"
-            : "cursor-default bg-[#d4d4c8] opacity-40 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
+            ? "shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)]"
+            : "cursor-default opacity-40 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
       }`}
-      style={{
-        border: `3px solid ${playable || inTrick ? "#111" : "#555"}`,
-        imageRendering: "pixelated",
-      }}
+      style={{ imageRendering: "pixelated" }}
     >
-      {/* Top-left rank */}
-      <span
-        className="absolute top-1 left-1.5 font-mono font-black leading-none"
-        style={{ color, fontSize: inTrick ? "16px" : "13px", textShadow: "1px 1px 0 rgba(0,0,0,0.15)" }}
-      >
-        {RANK_STR[card.rank]}
-      </span>
-      {/* Center suit — oversized */}
-      <span
-        className="leading-none"
-        style={{ color, fontSize: inTrick ? "36px" : "28px", filter: "drop-shadow(1px 1px 0 rgba(0,0,0,0.1))" }}
-      >
-        {SUIT_SYM[card.suit]}
-      </span>
-      {/* Bottom-right rank (flipped) */}
-      <span
-        className="absolute bottom-1 right-1.5 font-mono font-black leading-none rotate-180"
-        style={{ color, fontSize: inTrick ? "16px" : "13px", textShadow: "1px 1px 0 rgba(0,0,0,0.15)" }}
-      >
-        {RANK_STR[card.rank]}
-      </span>
+      {/* Pixel sprite image */}
+      <img
+        src={spriteUrl}
+        alt={`${RANK_DISPLAY[card.rank]}${SUIT_SYM[card.suit]}`}
+        className="absolute inset-0 w-full h-full object-contain"
+        style={{ imageRendering: "pixelated" }}
+        onError={(e) => {
+          // Fallback: hide image, show text card
+          (e.target as HTMLImageElement).style.display = "none";
+          const parent = (e.target as HTMLImageElement).parentElement;
+          if (parent) parent.classList.add("fallback-card");
+        }}
+      />
       {/* Playable glow */}
       {playable && (
-        <div className="absolute inset-0 rounded-sm animate-pulse" style={{ boxShadow: `0 0 12px ${color}40, inset 0 0 8px ${color}15` }} />
+        <div className="absolute inset-0 rounded-sm animate-pulse" style={{ boxShadow: `0 0 14px ${color}50, inset 0 0 10px ${color}20` }} />
       )}
     </motion.button>
   );
@@ -78,17 +77,27 @@ function CardBack({ compact }: { compact?: boolean }) {
   const size = compact ? "w-7 h-10" : "w-10 h-14";
   return (
     <div
-      className={`${size} rounded-sm flex items-center justify-center`}
+      className={`${size} rounded-sm overflow-hidden`}
       style={{
-        border: "2px solid #111",
-        background: "repeating-conic-gradient(#2d1b4e 0% 25%, #1a1a3e 0% 50%) 50% / 8px 8px",
         imageRendering: "pixelated",
         boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.6)",
       }}
     >
-      <div className="w-3/4 h-3/4 border border-[#FFD700]/40 rounded-sm bg-[#1a1a3e]/60 flex items-center justify-center">
-        <span className="text-[#FFD700]/60 text-[7px] font-mono font-bold">RI</span>
-      </div>
+      <img
+        src={`${CARD_SPRITE_BASE}/back.png`}
+        alt="Card back"
+        className="w-full h-full object-cover"
+        style={{ imageRendering: "pixelated" }}
+        onError={(e) => {
+          // CSS fallback
+          (e.target as HTMLImageElement).style.display = "none";
+          const parent = (e.target as HTMLImageElement).parentElement;
+          if (parent) {
+            parent.style.background = "repeating-conic-gradient(#2d1b4e 0% 25%, #1a1a3e 0% 50%) 50% / 8px 8px";
+            parent.style.border = "2px solid #111";
+          }
+        }}
+      />
     </div>
   );
 }
