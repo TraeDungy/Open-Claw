@@ -854,6 +854,10 @@ async function submitApplication() {
       backlog.push(rest);
       localStorage.setItem('pj-submissions', JSON.stringify(backlog));
     } catch { /* storage full/blocked */ }
+    // standalone build: hand the application over as a one-row CSV download
+    if (window.PS_LOCAL) {
+      try { downloadLocalCsv(payload); } catch { /* blob blocked */ }
+    }
   }
 
   setTimeout(() => {
@@ -865,6 +869,53 @@ async function submitApplication() {
     }, i * 200));
     setTimeout(showWin, 800);
   }, 1200);
+}
+
+/* Standalone (no-server) build: flatten the payload onto the 180-column
+   schema header embedded by build-local.mjs and download it as CSV. */
+function downloadLocalCsv(payload) {
+  const H = window.PS_LOCAL.header;
+  const esc = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const row = Object.fromEntries(H.map((c) => [c, '']));
+  const size = payload.players.length;
+  Object.assign(row, {
+    submission_id: 'PS-LOCAL-' + Date.now(),
+    application_ts: new Date().toISOString(),
+    event_name: 'POLY SWIPE',
+    submission_type: size > 1 ? 'group' : 'single',
+    group_size: size,
+    current_config: { 1: 'solo', 2: 'couple', 3: 'throuple', 4: 'quad' }[size] || 'other',
+    group_photo_file: state.photoName || '',
+    producer_status: 'new',
+  });
+  for (const [k, v] of Object.entries(payload.shared)) {
+    if (!(k in row)) continue;
+    row[k] = Array.isArray(v) ? v.join(k === 'searching_for' ? '|' : ';') : v;
+  }
+  row.home_state = (row.home_state || '').toUpperCase();
+  payload.players.forEach((p, i) => {
+    const k = (col) => `p${i + 1}_${col}`;
+    for (const [key, v] of Object.entries(p)) {
+      const col = k(key);
+      if (!(col in row)) continue;
+      row[col] = Array.isArray(v) ? v.join(key === 'relationship_goals' ? '|' : ';') : v;
+    }
+    if (!row[k('role_in_group')]) row[k('role_in_group')] = i === 0 ? 'primary_applicant' : 'member';
+    row[k('sti_status_optional')] = row[k('sti_status_optional')] || 'not_disclosed';
+  });
+  const consentCols = ['consent_live_broadcast', 'consent_media_release', 'consent_voluntary'];
+  const allConsented = payload.players.every((_, i) => consentCols.every((c) => row[`p${i + 1}_${c}`] === 'yes'));
+  row.mod_safety_flag = allConsented ? 'none' : 'review';
+
+  const csv = H.join(',') + '\n' + H.map((c) => esc(row[c])).join(',') + '\n';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = row.submission_id + '.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 function showWin() {
