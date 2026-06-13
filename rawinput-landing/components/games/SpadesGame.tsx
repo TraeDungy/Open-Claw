@@ -8,96 +8,105 @@ import {
 } from "@/lib/spades-engine";
 import { aiBid, aiPlayCard, getTrashTalk } from "@/lib/spades-ai";
 
-// ── CARD VISUALS — Pixel Art Sprites ──
-
-const CARD_SPRITE_BASE = "/rawinput/block-sprites/cards";
+// ── CARD VISUALS — CSS Pixel Art Cards (consistent, no alpha bleed) ──
 
 const SUIT_COLORS: Record<string, string> = {
-  spades: "#FFFFFF", hearts: "#FF3D00", diamonds: "#FFD600", clubs: "#00FF88",
+  spades: "#111", hearts: "#cc0000", diamonds: "#cc0000", clubs: "#111",
 };
 const SUIT_SYM: Record<string, string> = {
   spades: "♠", hearts: "♥", diamonds: "♦", clubs: "♣",
-};
-const RANK_STR: Record<number, string> = {
-  2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"j",12:"q",13:"k",14:"a",
 };
 const RANK_DISPLAY: Record<number, string> = {
   2:"2",3:"3",4:"4",5:"5",6:"6",7:"7",8:"8",9:"9",10:"10",11:"J",12:"Q",13:"K",14:"A",
 };
 
-function cardSpriteUrl(card: Card): string {
-  return `${CARD_SPRITE_BASE}/${RANK_STR[card.rank]}_${card.suit}.png`;
-}
-
-// Pixel-art cards using generated sprites — oversized, chunky
 function CardFace({ card, onClick, playable, inTrick }: {
   card: Card; onClick?: () => void; playable?: boolean; inTrick?: boolean;
 }) {
-  const color = SUIT_COLORS[card.suit];
-  const size = inTrick ? "w-20 h-28 md:w-24 md:h-32" : "w-16 h-22 md:w-[76px] md:h-[104px]";
-  const spriteUrl = cardSpriteUrl(card);
+  const sc = SUIT_COLORS[card.suit];
+  const sym = SUIT_SYM[card.suit];
+  const rank = RANK_DISPLAY[card.rank];
+  const isFace = card.rank >= 11 && card.rank <= 13;
+  const isAce = card.rank === 14;
+
+  const w = inTrick ? 96 : 64;
+  const h = inTrick ? 140 : 94;
+  const cornerFont = inTrick ? 15 : 11;
+  const cornerSuit = inTrick ? 11 : 8;
+  const centerFont = isAce ? (inTrick ? 52 : 36) : isFace ? (inTrick ? 30 : 22) : (inTrick ? 26 : 18);
 
   return (
     <motion.button
       onClick={onClick}
       disabled={!playable && !inTrick}
-      whileHover={playable ? { y: -14, scale: 1.12 } : undefined}
-      whileTap={playable ? { scale: 0.9 } : undefined}
-      className={`${size} rounded-sm relative overflow-hidden transition-all ${
+      whileHover={playable ? { y: -12, scale: 1.1 } : undefined}
+      whileTap={playable ? { scale: 0.92 } : undefined}
+      className={`relative select-none transition-all ${
         playable
-          ? "cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.9)]"
-          : inTrick
-            ? "shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)]"
-            : "cursor-default opacity-40 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
+          ? "cursor-pointer shadow-[3px_3px_0px_0px_#000] hover:shadow-[5px_5px_0px_0px_#000]"
+          : inTrick ? "shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)]"
+          : "cursor-default opacity-35 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.25)]"
       }`}
-      style={{ imageRendering: "pixelated" }}
+      style={{
+        width: w, height: h,
+        background: "#f5f0e6",
+        border: "3px solid #222",
+        borderRadius: 2,
+        imageRendering: "pixelated",
+      }}
     >
-      {/* Pixel sprite image */}
-      <img
-        src={spriteUrl}
-        alt={`${RANK_DISPLAY[card.rank]}${SUIT_SYM[card.suit]}`}
-        className="absolute inset-0 w-full h-full object-contain"
-        style={{ imageRendering: "pixelated" }}
-        onError={(e) => {
-          // Fallback: hide image, show text card
-          (e.target as HTMLImageElement).style.display = "none";
-          const parent = (e.target as HTMLImageElement).parentElement;
-          if (parent) parent.classList.add("fallback-card");
-        }}
-      />
+      {/* Corner TL */}
+      <div className="absolute flex flex-col items-center leading-none" style={{ top: 3, left: 4, color: sc }}>
+        <span style={{ fontSize: cornerFont, fontWeight: 900, fontFamily: "monospace" }}>{rank}</span>
+        <span style={{ fontSize: cornerSuit, lineHeight: 1 }}>{sym}</span>
+      </div>
+      {/* Center */}
+      <div className="absolute inset-0 flex items-center justify-center" style={{ color: sc }}>
+        <span style={{ fontSize: centerFont, lineHeight: 1 }}>{sym}</span>
+      </div>
+      {/* Corner BR */}
+      <div className="absolute flex flex-col items-center leading-none rotate-180" style={{ bottom: 3, right: 4, color: sc }}>
+        <span style={{ fontSize: cornerFont, fontWeight: 900, fontFamily: "monospace" }}>{rank}</span>
+        <span style={{ fontSize: cornerSuit, lineHeight: 1 }}>{sym}</span>
+      </div>
+      {/* Face card label */}
+      {isFace && (
+        <div className="absolute bottom-[22%] w-full text-center" style={{ color: sc }}>
+          <span style={{ fontSize: inTrick ? 7 : 5, fontWeight: 900, letterSpacing: 1, fontFamily: "monospace", opacity: 0.5 }}>
+            {card.rank === 11 ? "JACK" : card.rank === 12 ? "QUEEN" : "KING"}
+          </span>
+        </div>
+      )}
       {/* Playable glow */}
       {playable && (
-        <div className="absolute inset-0 rounded-sm animate-pulse" style={{ boxShadow: `0 0 14px ${color}50, inset 0 0 10px ${color}20` }} />
+        <div className="absolute inset-[-1px] pointer-events-none rounded-[2px] animate-pulse" style={{
+          boxShadow: `0 0 10px ${sc === "#cc0000" ? "rgba(255,60,60,0.35)" : "rgba(60,120,255,0.35)"}`,
+        }} />
       )}
     </motion.button>
   );
 }
 
 function CardBack({ compact }: { compact?: boolean }) {
-  const size = compact ? "w-7 h-10" : "w-10 h-14";
+  const w = compact ? 28 : 42;
+  const h = compact ? 41 : 62;
   return (
-    <div
-      className={`${size} rounded-sm overflow-hidden`}
-      style={{
-        imageRendering: "pixelated",
-        boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.6)",
-      }}
-    >
-      <img
-        src={`${CARD_SPRITE_BASE}/back.png`}
-        alt="Card back"
-        className="w-full h-full object-cover"
-        style={{ imageRendering: "pixelated" }}
-        onError={(e) => {
-          // CSS fallback
-          (e.target as HTMLImageElement).style.display = "none";
-          const parent = (e.target as HTMLImageElement).parentElement;
-          if (parent) {
-            parent.style.background = "repeating-conic-gradient(#2d1b4e 0% 25%, #1a1a3e 0% 50%) 50% / 8px 8px";
-            parent.style.border = "2px solid #111";
-          }
-        }}
-      />
+    <div style={{
+      width: w, height: h,
+      background: "#2d1b4e",
+      border: "2px solid #111",
+      borderRadius: 2,
+      boxShadow: "2px 2px 0px 0px rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{
+        width: "65%", height: "65%",
+        border: "1px solid rgba(255,215,0,0.3)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "repeating-linear-gradient(45deg, #3a2860 0px, #3a2860 2px, #2d1b4e 2px, #2d1b4e 4px)",
+      }}>
+        <span style={{ color: "#FFD700", fontSize: 6, fontWeight: 700, fontFamily: "monospace", opacity: 0.65 }}>RI</span>
+      </div>
     </div>
   );
 }
