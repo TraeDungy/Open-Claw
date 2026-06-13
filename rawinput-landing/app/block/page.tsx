@@ -389,43 +389,30 @@ export default function BlockPage() {
     let animFrame: number;
     const scale = canvas.width / (WORLD_W * TILE);
 
+    // Load overworld background image
+    const bgImg = new Image();
+    bgImg.src = "/rawinput/block-sprites/overworld_map.png";
+
     const render = () => {
       const W = canvas.width;
       const H = canvas.height;
       ctx.clearRect(0, 0, W, H);
 
-      // Sky gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-      skyGrad.addColorStop(0, "#1a1a3e");
-      skyGrad.addColorStop(0.4, "#2d1b4e");
-      skyGrad.addColorStop(1, "#0a0a1a");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Stars
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
-      for (let i = 0; i < 30; i++) {
-        const sx = ((i * 137 + 50) % W);
-        const sy = ((i * 97 + 20) % (H * 0.3));
-        const twinkle = Math.sin(Date.now() / 1000 + i) > 0.5 ? 1.5 : 1;
-        ctx.fillRect(sx, sy, twinkle, twinkle);
+      // Draw overworld background (pixel-art scene)
+      if (bgImg.complete && bgImg.naturalWidth > 0) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(bgImg, 0, 0, W, H);
+      } else {
+        // Fallback while loading
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+        skyGrad.addColorStop(0, "#d4702a");
+        skyGrad.addColorStop(0.3, "#8b3a6a");
+        skyGrad.addColorStop(1, "#1a1a2e");
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, W, H);
       }
 
-      // Ground
-      ctx.fillStyle = "#2a2a2a";
-      ctx.fillRect(0, H * 0.35, W, H * 0.65);
-
-      // Sidewalk grid
-      ctx.strokeStyle = "rgba(255,255,255,0.04)";
-      ctx.lineWidth = 1;
-      for (let gx = 0; gx < W; gx += TILE * scale) {
-        ctx.beginPath(); ctx.moveTo(gx, H * 0.35); ctx.lineTo(gx, H); ctx.stroke();
-      }
-      for (let gy = H * 0.35; gy < H; gy += TILE * scale) {
-        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
-      }
-
-      // Zone buildings
+      // Zone label overlays (drawn on top of background)
       const sprites = spritesRef.current;
       ZONES.forEach((zone) => {
         const zx = zone.x * TILE * scale / 1.8;
@@ -433,58 +420,26 @@ export default function BlockPage() {
         const zw = zone.w * TILE * scale / 2;
         const zh = zone.h * TILE * scale / 2;
 
-        // Try to draw building sprite
-        const buildingSpriteKey = ZONE_SPRITE_MAP[zone.id];
-        const buildingSprite = buildingSpriteKey ? sprites[`${buildingSpriteKey}_south`] : null;
-
-        if (buildingSprite && buildingSprite.complete && buildingSprite.naturalWidth > 0) {
-          ctx.imageSmoothingEnabled = false;
-          // Draw sprite filling the zone area
-          ctx.drawImage(buildingSprite, zx, zy, zw, zh);
-          // Selected glow
-          if (zone.id === selectedZone) {
-            ctx.strokeStyle = zone.color;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(zx - 1, zy - 1, zw + 2, zh + 2);
-            ctx.fillStyle = zone.color + "15";
-            ctx.fillRect(zx, zy, zw, zh);
-          }
-        } else {
-          // Fallback: colored rectangles
-          ctx.fillStyle = zone.id === selectedZone ? zone.color + "40" : "#1a1a1a";
+        // Selected zone highlight
+        if (zone.id === selectedZone) {
+          ctx.fillStyle = zone.color + "20";
           ctx.fillRect(zx, zy, zw, zh);
-          ctx.strokeStyle = zone.id === selectedZone ? zone.color : "#333";
-          ctx.lineWidth = zone.id === selectedZone ? 2 : 1;
-          ctx.strokeRect(zx, zy, zw, zh);
-          ctx.fillStyle = zone.color + "80";
-          ctx.fillRect(zx + zw / 2 - 6, zy + zh - 15, 12, 15);
+          ctx.strokeStyle = zone.color;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(zx - 1, zy - 1, zw + 2, zh + 2);
         }
 
-        // Sign (always draw on top)
-        ctx.fillStyle = zone.color;
+        // Zone name label with background
+        const labelY = zy - 6;
+        const labelText = zone.icon + " " + zone.name;
         ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
         ctx.textAlign = "center";
-        ctx.fillText(zone.icon + " " + zone.name, zx + zw / 2, zy - 4);
+        const textW = ctx.measureText(labelText).width;
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(zx + zw / 2 - textW / 2 - 4, labelY - 10, textW + 8, 14);
+        ctx.fillStyle = zone.color;
+        ctx.fillText(labelText, zx + zw / 2, labelY);
       });
-
-      // Street elements
-      // Fire hydrant
-      ctx.fillStyle = "#E74C3C";
-      ctx.fillRect(320 * scale / 0.9, H * 0.7, 8, 12);
-      // Street lamp
-      ctx.fillStyle = "#555";
-      ctx.fillRect(180 * scale / 0.9, H * 0.4, 3, H * 0.3);
-      ctx.fillStyle = "#FFD700";
-      ctx.beginPath();
-      ctx.arc(181 * scale / 0.9, H * 0.4, 6, 0, Math.PI * 2);
-      ctx.fill();
-      // Another lamp
-      ctx.fillStyle = "#555";
-      ctx.fillRect(520 * scale / 0.9, H * 0.4, 3, H * 0.3);
-      ctx.fillStyle = "#FFD700";
-      ctx.beginPath();
-      ctx.arc(521 * scale / 0.9, H * 0.4, 6, 0, Math.PI * 2);
-      ctx.fill();
 
       // Interpolate agent positions
       setAgents((prev) =>
