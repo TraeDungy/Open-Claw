@@ -91,14 +91,14 @@ interface ChatMessage {
   zone: string;
 }
 
-// ── ZONES ──
+// ── ZONES (positions match 3x2 isometric grid in overworld_map.png) ──
 const ZONES = [
-  { id: "porch", name: "THE PORCH", x: 2, y: 1, w: 4, h: 3, color: "#FF6B35", desc: "Chill & Observe", icon: "🪑" },
-  { id: "corner", name: "THE CORNER", x: 7, y: 1, w: 4, h: 3, color: "#E74C3C", desc: "Debate & Argue", icon: "🗣️" },
-  { id: "rink", name: "THE RINK", x: 12, y: 1, w: 4, h: 3, color: "#9B59B6", desc: "Battle Arena", icon: "⚔️" },
-  { id: "bodega", name: "THE BODEGA", x: 2, y: 5, w: 4, h: 3, color: "#2ECC71", desc: "Trade & Exchange", icon: "🏪" },
-  { id: "park", name: "THE PARK", x: 7, y: 5, w: 4, h: 3, color: "#3498DB", desc: "The Cookout", icon: "🔥" },
-  { id: "lab", name: "THE LAB", x: 12, y: 5, w: 4, h: 3, color: "#FFD700", desc: "Build & Create", icon: "🔬" },
+  { id: "porch", name: "THE PORCH", x: 0, y: 0, w: 6, h: 4, color: "#FF6B35", desc: "Chill & Observe", icon: "🪑", type: "building" },
+  { id: "corner", name: "THE CORNER", x: 6, y: 0, w: 6, h: 4, color: "#E74C3C", desc: "Debate & Argue", icon: "🗣️", type: "area" },
+  { id: "rink", name: "THE RINK", x: 12, y: 0, w: 6, h: 4, color: "#9B59B6", desc: "Battle Arena", icon: "⚔️", type: "building" },
+  { id: "bodega", name: "THE BODEGA", x: 0, y: 4.5, w: 6, h: 4, color: "#2ECC71", desc: "Trade & Exchange", icon: "🏪", type: "building" },
+  { id: "park", name: "THE PARK", x: 6, y: 4.5, w: 6, h: 4, color: "#3498DB", desc: "The Cookout", icon: "🔥", type: "area" },
+  { id: "lab", name: "THE LAB", x: 12, y: 4.5, w: 6, h: 4, color: "#FFD700", desc: "Build & Create", icon: "🔬", type: "building" },
 ];
 
 // ── AGENTS ──
@@ -412,81 +412,23 @@ export default function BlockPage() {
         ctx.fillRect(0, 0, W, H);
       }
 
-      // Zone label overlays (drawn on top of background)
-      const sprites = spritesRef.current;
+      // Zone overlays — highlight selected zone on the map
       ZONES.forEach((zone) => {
-        const zx = zone.x * TILE * scale / 1.8;
-        const zy = zone.y * TILE * scale / 1.5 + H * 0.1;
-        const zw = zone.w * TILE * scale / 2;
-        const zh = zone.h * TILE * scale / 2;
+        // Map zone grid coords to pixel positions on the image
+        const zx = (zone.x / 18) * W;
+        const zy = (zone.y / 9) * H;
+        const zw = (zone.w / 18) * W;
+        const zh = (zone.h / 9) * H;
 
         // Selected zone highlight
         if (zone.id === selectedZone) {
-          ctx.fillStyle = zone.color + "20";
+          ctx.fillStyle = zone.color + "18";
           ctx.fillRect(zx, zy, zw, zh);
-          ctx.strokeStyle = zone.color;
+          ctx.strokeStyle = zone.color + "80";
           ctx.lineWidth = 2;
-          ctx.strokeRect(zx - 1, zy - 1, zw + 2, zh + 2);
-        }
-
-        // Zone name label with background
-        const labelY = zy - 6;
-        const labelText = zone.icon + " " + zone.name;
-        ctx.font = `bold ${Math.max(8, 10 * scale)}px monospace`;
-        ctx.textAlign = "center";
-        const textW = ctx.measureText(labelText).width;
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(zx + zw / 2 - textW / 2 - 4, labelY - 10, textW + 8, 14);
-        ctx.fillStyle = zone.color;
-        ctx.fillText(labelText, zx + zw / 2, labelY);
-      });
-
-      // Interpolate agent positions
-      setAgents((prev) =>
-        prev.map((a) => ({
-          ...a,
-          x: a.x + (a.targetX - a.x) * 0.05,
-          y: a.y + (a.targetY - a.y) * 0.05,
-          idle: Math.abs(a.targetX - a.x) < 1 && Math.abs(a.targetY - a.y) < 1,
-        }))
-      );
-
-      // Draw NPCs
-      NPCS.forEach((npc) => drawNPC(ctx, npc, scale, sprites));
-
-      // Draw agents
-      agents.forEach((agent) => {
-        drawPixelAgent(ctx, agent, scale, sprites);
-
-        // Speech bubble
-        if (agent.message) {
-          const bx = agent.x * scale;
-          const by = (agent.y - 25) * scale;
-          const maxW = 200;
-          ctx.fillStyle = "rgba(0,0,0,0.85)";
-          ctx.beginPath();
-          ctx.roundRect(bx - 10, by - 30, maxW, 28, 6);
-          ctx.fill();
-          ctx.strokeStyle = agent.color;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.roundRect(bx - 10, by - 30, maxW, 28, 6);
-          ctx.stroke();
-          ctx.fillStyle = "#FFFFFF";
-          ctx.font = `${8 * scale}px system-ui`;
-          ctx.textAlign = "left";
-          ctx.fillText(agent.message, bx - 5, by - 12);
+          ctx.strokeRect(zx + 1, zy + 1, zw - 2, zh - 2);
         }
       });
-
-      // Title
-      ctx.fillStyle = "#FFD700";
-      ctx.font = `bold ${14 * scale}px monospace`;
-      ctx.textAlign = "center";
-      ctx.fillText("W H O   L E T   T H E   B O T S   O U T", W / 2, 20);
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
-      ctx.font = `${8 * scale}px monospace`;
-      ctx.fillText(`${viewers} watching`, W / 2, 34);
 
       animFrame = requestAnimationFrame(render);
     };
