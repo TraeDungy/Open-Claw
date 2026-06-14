@@ -1,6 +1,5 @@
 "use client";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import EventCard from "./EventCard";
 import FieldGuideCard from "./FieldGuideCard";
 import CymaticField from "./CymaticField";
@@ -10,13 +9,10 @@ export default function Hero() {
     <section className="signal-bg relative overflow-hidden">
       {/* ── Featured Hero Image — flush to top, square image centered ── */}
       <div className="relative w-full overflow-hidden" style={{ height: "min(75vh, 650px)" }}>
-        <Image
-          src="/assets/hero-woman.png"
+        <img
+          src="/tsg/assets/hero-woman.png"
           alt="Telekinesis Support Group — The Control Series"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
+          className="h-full w-full object-cover object-center"
         />
         {/* Cymatic particle overlay — interactive, originates from 3rd eye */}
         <CymaticField />

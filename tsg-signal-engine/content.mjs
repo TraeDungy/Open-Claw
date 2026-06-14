@@ -21,6 +21,11 @@ export function loadFrequencies() {
   return _frequencies;
 }
 
+export function invalidateCache() {
+  _files = null;
+  _frequencies = null;
+}
+
 export function resolveEntry(source) {
   const { page, tab, index } = source;
   const data = page === "files" ? loadFiles() : loadFrequencies();

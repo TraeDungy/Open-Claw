@@ -6,6 +6,7 @@ import { DRIP_SEQUENCE, getDueDrips } from "./drip.mjs";
 import { getCalendar, getWeekNumber, getCurrentEntry, getMonthlyDigest } from "./broadcast.mjs";
 import { resolveEntry } from "./content.mjs";
 import * as tpl from "./templates.mjs";
+import { runScout, shouldRunScout, startApprovalServer } from "./content-scout.mjs";
 
 const HOUR_MS = 60 * 60 * 1000;
 const SEND_HOUR = parseInt(process.env.SEND_HOUR_UTC || "14", 10);
@@ -161,6 +162,12 @@ async function runCycle() {
   if (hour === SEND_HOUR) {
     await processDrips(now);
     await processBroadcasts(now);
+
+    // Content Scout — weekly archive curation (Sundays at send hour)
+    if (shouldRunScout(now)) {
+      console.log("[Content Scout] Weekly scan triggered");
+      await runScout().catch(err => console.error("[Content Scout] Error:", err.message));
+    }
   } else {
     console.log(`Waiting for send hour (${SEND_HOUR} UTC). Synced contacts only.`);
   }
@@ -174,5 +181,9 @@ async function runCycle() {
 // Run immediately, then every hour
 console.log("TSG Signal Engine starting...");
 console.log(`Send hour: ${SEND_HOUR} UTC | Model: ${process.env.LITELLM_MODEL || "llm-kimi"}`);
+
+// Start approval server for content scout
+startApprovalServer().catch(err => console.error("Approval server error:", err.message));
+
 runCycle().catch(console.error);
 setInterval(() => runCycle().catch(console.error), HOUR_MS);

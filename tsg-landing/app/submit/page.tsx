@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
 import ParticleField from "@/components/ParticleField";
 import { Suspense } from "react";
 
@@ -121,12 +120,10 @@ function ContactContent() {
           <div className="mb-8">
             {/* Prominent image */}
             <div className="relative w-full overflow-hidden rounded-lg border border-bone/6" style={{ height: "220px" }}>
-              <Image
-                src="/posters/cinematic-02-tk-mantra.png"
+              <img
+                src="/tsg/posters/cinematic-02-tk-mantra.png"
                 alt="Open Signal — A Call for Films"
-                fill
-                className="object-cover object-center"
-                sizes="(max-width: 768px) 100vw, 672px"
+                className="absolute inset-0 h-full w-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 px-5 pb-4">

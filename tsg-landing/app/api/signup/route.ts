@@ -48,6 +48,20 @@ export async function POST(req: NextRequest) {
       html,
     });
 
+    // Notify admin of new signup
+    const adminEmail = process.env.ADMIN_EMAIL || "trae.dungy@gmail.com";
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [adminEmail],
+      subject: `NEW SIGNAL — ${email}`,
+      html: `<div style="font-family:monospace;background:#050505;color:#F5E3B3;padding:24px;">
+        <p style="color:#00FFB3;font-size:10px;letter-spacing:0.3em;">NEW SUBSCRIBER</p>
+        <p style="font-size:16px;margin:8px 0;"><strong>${email}</strong></p>
+        <p style="color:#FFC260;font-size:11px;">Source: ${source || "website"}</p>
+        <p style="color:rgba(245,227,179,0.3);font-size:10px;margin-top:12px;">${new Date().toLocaleString("en-US", { timeZone: "America/New_York" })}</p>
+      </div>`,
+    }).catch(() => {}); // Non-blocking — don't fail signup if admin email fails
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Signup error:", err);
