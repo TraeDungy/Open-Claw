@@ -414,19 +414,93 @@ export default function BlockPage() {
 
       // Zone overlays — highlight selected zone on the map
       ZONES.forEach((zone) => {
-        // Map zone grid coords to pixel positions on the image
         const zx = (zone.x / 18) * W;
         const zy = (zone.y / 9) * H;
         const zw = (zone.w / 18) * W;
         const zh = (zone.h / 9) * H;
 
-        // Selected zone highlight
         if (zone.id === selectedZone) {
           ctx.fillStyle = zone.color + "18";
           ctx.fillRect(zx, zy, zw, zh);
           ctx.strokeStyle = zone.color + "80";
           ctx.lineWidth = 2;
           ctx.strokeRect(zx + 1, zy + 1, zw - 2, zh - 2);
+        }
+      });
+
+      // Interpolate agent positions
+      setAgents((prev) =>
+        prev.map((a) => ({
+          ...a,
+          x: a.x + (a.targetX - a.x) * 0.05,
+          y: a.y + (a.targetY - a.y) * 0.05,
+          idle: Math.abs(a.targetX - a.x) < 1 && Math.abs(a.targetY - a.y) < 1,
+        }))
+      );
+
+      // Draw agents as pixel-style markers on the map
+      agents.forEach((agent) => {
+        const ax = agent.x * scale;
+        const ay = agent.y * scale;
+        const bounce = agent.idle ? Math.sin(Date.now() / 500 + agent.x) * 2 : 0;
+
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath();
+        ctx.ellipse(ax + 6, ay + 14 + bounce, 6, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Body — colored pixel block
+        ctx.fillStyle = agent.color;
+        ctx.fillRect(ax, ay + bounce, 12, 12);
+
+        // Head — lighter
+        ctx.fillStyle = agent.skinColor;
+        ctx.fillRect(ax + 2, ay - 6 + bounce, 8, 8);
+
+        // Eyes
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(ax + 3, ay - 3 + bounce, 2, 2);
+        ctx.fillRect(ax + 7, ay - 3 + bounce, 2, 2);
+
+        // Name label
+        ctx.fillStyle = "rgba(0,0,0,0.75)";
+        const nameW = ctx.measureText(agent.name).width;
+        ctx.fillRect(ax + 6 - nameW / 2 - 2, ay - 18 + bounce, nameW + 4, 10);
+        ctx.fillStyle = agent.color;
+        ctx.font = "bold 8px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(agent.name, ax + 6, ay - 10 + bounce);
+
+        // Speaking indicator
+        if (agent.speaking) {
+          ctx.strokeStyle = agent.color;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.arc(ax + 6, ay + 3 + bounce, 14, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Speech bubble
+        if (agent.message) {
+          const bx = ax - 10;
+          const by = ay - 36 + bounce;
+          const maxW = Math.min(180, W - bx - 10);
+          ctx.fillStyle = "rgba(0,0,0,0.85)";
+          ctx.beginPath();
+          ctx.roundRect(bx, by, maxW, 22, 4);
+          ctx.fill();
+          ctx.strokeStyle = agent.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(bx, by, maxW, 22, 4);
+          ctx.stroke();
+          ctx.fillStyle = "#fff";
+          ctx.font = "7px system-ui";
+          ctx.textAlign = "left";
+          ctx.fillText(agent.message, bx + 4, by + 14);
         }
       });
 
