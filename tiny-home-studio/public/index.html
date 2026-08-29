@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiny Home Studio — container home designer</title>
+<meta name="description" content="Design a shipping-container tiny home from a template in minutes. Live 2D plan, 3D cutaway, code checks and a real budget.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230ea5e9'/%3E%3Cpath d='M6 20 16 11l10 9v5H6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<!-- ───────── Start gallery ───────── -->
+<div id="start" class="start" hidden>
+  <div class="start__inner">
+    <header class="start__head">
+      <div>
+        <h1>Tiny Home Studio</h1>
+        <p>Pick a starting point. Every template is a complete, buildable container home — change anything after.</p>
+      </div>
+      <button class="btn btn--ghost" id="start-close" hidden>Back to my design</button>
+    </header>
+
+    <div class="start__tabs" role="tablist">
+      <button class="tab is-active" data-start-tab="templates" role="tab">Templates</button>
+      <button class="tab" data-start-tab="blank" role="tab">Start from a box</button>
+      <button class="tab" data-start-tab="saved" role="tab">Saved designs</button>
+    </div>
+
+    <div class="start__panel" data-start-panel="templates">
+      <div class="template-grid" id="template-grid"></div>
+    </div>
+
+    <div class="start__panel" data-start-panel="blank" hidden>
+      <div class="shell-grid" id="shell-grid"></div>
+    </div>
+
+    <div class="start__panel" data-start-panel="saved" hidden>
+      <div class="saved-list" id="saved-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───────── App shell ───────── -->
+<div class="app" id="app" hidden>
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="brand"><span class="brand__mark"></span>Tiny Home Studio</span>
+      <input id="project-name" class="name-input" aria-label="Project name" spellcheck="false">
+    </div>
+
+    <div class="topbar__center">
+      <div class="segmented" role="tablist" aria-label="View">
+        <button class="segmented__btn is-active" data-view="plan">Plan</button>
+        <button class="segmented__btn" data-view="split">Split</button>
+        <button class="segmented__btn" data-view="3d">3D</button>
+      </div>
+      <div class="level-switch" id="level-switch" hidden></div>
+    </div>
+
+    <div class="topbar__right">
+      <button class="icon-btn" id="undo" title="Undo (⌘Z)" aria-label="Undo">↶</button>
+      <button class="icon-btn" id="redo" title="Redo (⌘⇧Z)" aria-label="Redo">↷</button>
+      <button class="icon-btn" id="units-toggle" title="Toggle units">ft</button>
+      <button class="btn btn--ghost" id="open-start">Templates</button>
+      <button class="btn btn--ghost" id="save">Save</button>
+      <div class="menu">
+        <button class="btn btn--primary" id="export-btn">Export ▾</button>
+        <div class="menu__list" id="export-menu" hidden>
+          <button data-export="svg">Floor plan (SVG)</button>
+          <button data-export="png">Floor plan (PNG)</button>
+          <button data-export="spec">Full spec sheet (print / PDF)</button>
+          <button data-export="json">Project file (JSON)</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left rail: things you drag in -->
+    <aside class="rail rail--left">
+      <section class="rail__section">
+        <h2>Rooms<small>click a room, or drop onto the plan</small></h2>
+        <div class="palette" id="zone-palette"></div>
+      </section>
+      <section class="rail__section">
+        <h2>Doors &amp; windows<small>drag onto any wall</small></h2>
+        <div class="palette palette--openings" id="opening-palette"></div>
+      </section>
+      <section class="rail__section">
+        <h2>Boxes</h2>
+        <div class="stack" id="module-list"></div>
+        <button class="btn btn--block" id="add-module">+ Add another box</button>
+      </section>
+    </aside>
+
+    <!-- Stage -->
+    <section class="stage" id="stage">
+      <div class="stage__pane stage__pane--plan" id="pane-plan">
+        <canvas id="plan-canvas"></canvas>
+        <div class="stage__tools">
+          <button class="icon-btn" id="zoom-fit" title="Fit to window (F)">⤢</button>
+          <button class="icon-btn" id="zoom-in" title="Zoom in">+</button>
+          <button class="icon-btn" id="zoom-out" title="Zoom out">−</button>
+          <button class="icon-btn" id="toggle-furniture" title="Show furniture">🛋</button>
+          <button class="icon-btn" id="toggle-dims" title="Show dimensions">↔</button>
+        </div>
+        <div class="hint" id="hint">Drag a wall to resize · click a room to change it · drag a window onto any wall</div>
+      </div>
+      <div class="stage__pane stage__pane--3d" id="pane-3d" hidden>
+        <canvas id="view-canvas"></canvas>
+        <div class="stage__tools stage__tools--3d">
+          <label class="slider"><span>Cutaway</span><input type="range" id="cutaway" min="0" max="100" value="55"></label>
+          <label class="slider"><span>Tilt</span><input type="range" id="pitch" min="10" max="80" value="34"></label>
+          <button class="icon-btn" id="spin" title="Orbit">⟳</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right rail: what changed, what it costs, what breaks -->
+    <aside class="rail rail--right">
+      <div class="stats" id="stats"></div>
+
+      <div class="inspector" id="inspector"></div>
+
+      <section class="rail__section rail__section--flush">
+        <div class="accordion" data-open="true">
+          <button class="accordion__head" data-accordion="checks">
+            <span>Buildability</span><span class="badge" id="checks-badge">—</span>
+          </button>
+          <div class="accordion__body" id="checks-body"></div>
+        </div>
+        <div class="accordion">
+          <button class="accordion__head" data-accordion="cost">
+            <span>Budget</span><span class="badge badge--money" id="cost-badge">—</span>
+          </button>
+          <div class="accordion__body" id="cost-body"></div>
+        </div>
+        <div class="accordion">
+          <button class="accordion__head" data-accordion="build">
+            <span>Build spec</span><span class="badge" id="build-badge"></span>
+          </button>
+          <div class="accordion__body" id="build-body"></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<dialog id="help" class="help">
+  <h2>Shortcuts</h2>
+  <ul>
+    <li><kbd>1</kbd>–<kbd>9</kbd> set the selected room's type</li>
+    <li><kbd>Enter</kbd> type an exact size for the selection</li>
+    <li><kbd>⌫</kbd> delete the selected room or opening</li>
+    <li><kbd>D</kbd> duplicate the selected room</li>
+    <li><kbd>W</kbd> toggle the wall after the selected room</li>
+    <li><kbd>F</kbd> fit · <kbd>[</kbd> <kbd>]</kbd> switch views · <kbd>U</kbd> units</li>
+    <li><kbd>⌘Z</kbd> / <kbd>⌘⇧Z</kbd> undo, redo</li>
+  </ul>
+  <button class="btn btn--primary" id="help-close">Got it</button>
+</dialog>
+
+<script type="module" src="/js/main.mjs"></script>
+</body>
+</html>

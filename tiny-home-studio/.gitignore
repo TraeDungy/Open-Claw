@@ -1,0 +1,4 @@
+# Saved projects are user data, not source.
+data/
+node_modules/
+*.log
